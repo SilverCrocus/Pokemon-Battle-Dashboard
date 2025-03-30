@@ -53,3 +53,21 @@ python app.py
 
 ## Project Structure
 
+Pokemon_battle_mel/
+├── app.py                # Flask application entry point
+├── pokemon_service.py    # Service for Pokemon data retrieval
+├── requirements.txt      # Python dependencies
+├── render.yaml           # Render deployment configuration
+├── README.md             # This file
+├── static/               # Static assets
+│   ├── css/              # CSS styles
+│   │   └── style.css     
+│   └── js/               # JavaScript files
+│       └── script.js     
+├── templates/            # HTML templates
+│   └── index.html        # Main page template
+└── screenshots/          # Screenshots for README
+    ├── dashboard.png
+    ├── setup.png
+    ├── battle.png
+    └── winner.png
