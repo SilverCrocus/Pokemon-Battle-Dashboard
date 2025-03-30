@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Fetching battle data...');
         
-        // Fetch new battle data
+        // Fetch new battle data and process the response
         fetch('/api/battle')
             .then(response => {
                 console.log('API Response:', response);
@@ -166,12 +166,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Store battle data
                 battleData = data;
                 
-                // Store Pokemon data
-                pokemonList1 = data.player1.pokemon;
-                pokemonList2 = data.player2.pokemon;
+                // Store Pokemon data and filter out any null/undefined entries
+                pokemonList1 = data.player1.pokemon.filter(p => p !== null && p !== undefined);
+                pokemonList2 = data.player2.pokemon.filter(p => p !== null && p !== undefined);
                 
-                // Update total counts
-                totalPokemonPerPlayer = Math.max(pokemonList1.length, pokemonList2.length);
+                console.log(`Player 1 has ${pokemonList1.length} Pokemon`);
+                console.log(`Player 2 has ${pokemonList2.length} Pokemon`);
                 
                 // Update progress
                 updateRevealProgress();
@@ -200,6 +200,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function createPokemonPlaceholders() {
         console.log('Creating placeholders...');
         
+        player1Pokemon.innerHTML = ''; // Clear any existing content
+        player2Pokemon.innerHTML = '';
+        
         // Create exactly the number of placeholders needed for each player
         for (let i = 0; i < pokemonList1.length; i++) {
             const card = createEmptyPokemonCard(1, i);
@@ -211,8 +214,9 @@ document.addEventListener('DOMContentLoaded', function() {
             player2Pokemon.appendChild(card);
         }
         
-        // Update the total count for progress tracking
-        totalPokemonPerPlayer = Math.max(pokemonList1.length, pokemonList2.length);
+        // Calculate the actual total based on the Pokemon we have
+        const totalPokemon = pokemonList1.length + pokemonList2.length;
+        console.log(`Total Pokemon to reveal: ${totalPokemon}`);
     }
     
     // Create an empty card placeholder
@@ -230,11 +234,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Reveal next Pokemon
     function revealNextPokemon() {
-        if (revealedCount >= totalPokemonPerPlayer * 2) return;
+        const totalPokemon = pokemonList1.length + pokemonList2.length;
+        
+        if (revealedCount >= totalPokemon) {
+            console.log('All Pokemon have been revealed');
+            return;
+        }
         
         // Alternate between players
         const currentPlayerNum = (revealedCount % 2) + 1;
         const pokemonIndex = Math.floor(revealedCount / 2);
+        
+        // Verify we're not trying to reveal a Pokemon that doesn't exist
+        const maxIndex1 = pokemonList1.length - 1;
+        const maxIndex2 = pokemonList2.length - 1;
+        
+        if ((currentPlayerNum === 1 && pokemonIndex > maxIndex1) || 
+            (currentPlayerNum === 2 && pokemonIndex > maxIndex2)) {
+            console.log(`Skipping invalid Pokemon: Player ${currentPlayerNum}, Index ${pokemonIndex}`);
+            revealedCount++;
+            updateRevealProgress();
+            return;
+        }
         
         // Get the corresponding Pokemon data
         let pokemonData;
@@ -322,9 +343,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start auto-revealing Pokemon
     function startAutoReveal() {
         if (revealInterval) clearInterval(revealInterval);
+        
+        const totalPokemon = pokemonList1.length + pokemonList2.length;
+        
         revealInterval = setInterval(() => {
             revealNextPokemon();
-            if (revealedCount >= totalPokemonPerPlayer * 2) {
+            if (revealedCount >= totalPokemon) {
                 clearInterval(revealInterval);
             }
         }, 2000); // Reveal every 2 seconds
@@ -365,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateRevealProgress() {
         const totalCards = pokemonList1.length + pokemonList2.length;
         revealProgressText.textContent = `Revealing: ${revealedCount}/${totalCards} Pokemon`;
-        const progressPercent = (revealedCount / totalCards) * 100;
+        const progressPercent = totalCards > 0 ? (revealedCount / totalCards) * 100 : 0;
         progressFill.style.width = `${progressPercent}%`;
     }
     
