@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Reveal next Pokemon with improved card handling and state control
+    // Reveal next Pokemon with a completely new implementation
     function revealNextPokemon() {
         const totalPokemon = pokemonList1.length + pokemonList2.length;
         
@@ -293,112 +293,62 @@ document.addEventListener('DOMContentLoaded', function() {
         const selector = `.player-${currentPlayerNum}-card[data-index="${pokemonIndex}"]`;
         const cardElement = parentContainer.querySelector(selector);
         
-        console.log(`Revealing P${currentPlayerNum} Pokemon ${pokemonIndex}:`, cardElement);
-        
         if (cardElement) {
-            // Check if this card is already being revealed to prevent double reveals
-            if (cardElement.classList.contains('revealing') || revealedCards.has(`p${currentPlayerNum}-${pokemonIndex}`)) {
-                console.log(`Card P${currentPlayerNum}-${pokemonIndex} is already revealing or revealed. Skipping.`);
+            // Prepare a unique ID for this card
+            const cardId = `p${currentPlayerNum}-${pokemonIndex}`;
+            
+            // Check if this card is already being processed
+            if (cardElement.classList.contains('revealing') || 
+                cardElement.classList.contains('revealed') ||
+                revealedCards.has(cardId)) {
+                console.log(`Card ${cardId} is already revealed or revealing - skipping`);
                 revealedCount++;
                 updateRevealProgress();
                 return;
             }
             
-            // Mark as currently revealing to prevent duplicate reveal operations
-            cardElement.classList.add('revealing');
+            console.log(`Revealing ${cardId} - Pokemon: ${pokemonData.name}`);
             
-            // Update card with Pokemon data
+            // First, update the card's content BEFORE showing it
             updatePokemonCard(cardElement, pokemonData);
             
-            // Mark the card as revealed in our tracking
-            const cardId = `p${currentPlayerNum}-${pokemonIndex}`;
+            // Mark the card for tracking
             revealedCards.add(cardId);
-            
-            // Mark with multiple indicators to ensure it stays revealed
-            cardElement.dataset.revealed = 'true';
-            cardElement.dataset.pokemonName = pokemonData.name;
             cardElement.dataset.cardId = cardId;
+            cardElement.dataset.pokemonName = pokemonData.name;
+            cardElement.dataset.revealed = 'pending'; // Mark as in progress
             
-            // Add first-pokemon class if this is the first reveal for this player
-            if (pokemonIndex === 0) {
-                cardElement.classList.add('first-pokemon');
-                console.log(`Adding first-pokemon class to ${cardId}`);
-            }
+            // Add 'revealing' class to prevent multiple operations
+            cardElement.classList.add('revealing');
             
-            // Start observing this card for attribute changes - but only after initial reveal
+            // IMPORTANT: Force browser reflow before any animation
+            void cardElement.offsetWidth;
+            
+            // NEW APPROACH: Two-phase reveal with clear state tracking
+            // Phase 1: Start reveal after a delay to ensure DOM is ready
             setTimeout(() => {
-                cardObserver.observe(cardElement, { 
-                    attributes: true,
-                    attributeFilter: ['class']
-                });
-            }, 1500);
-            
-            // IMPORTANT: Clean sequential reveal with proper state management
-            setTimeout(() => {
-                // Force browser reflow before changing classes
-                void cardElement.offsetWidth;
-                
-                // Reveal the card
+                // Remove hidden class and add revealed-start
                 cardElement.classList.remove('hidden');
-                cardElement.classList.add('revealed');
+                cardElement.classList.add('revealed-start');
                 
-                // Schedule adding the reveal-complete class after animation
+                // Update score - only on initial reveal
+                updateScoreForPokemon(currentPlayerNum, pokemonData.total_stats);
+                
+                // Phase 2: Complete reveal after animation
                 setTimeout(() => {
-                    cardElement.classList.remove('revealing');
-                    cardElement.classList.add('reveal-complete');
-                }, 800);
-            }, 50);
+                    cardElement.classList.remove('revealing', 'revealed-start');
+                    cardElement.classList.add('revealed', 'reveal-complete');
+                    cardElement.dataset.revealed = 'true'; // Mark as fully revealed
+                    
+                    // Show confirmation in console
+                    console.log(`Card ${cardId} reveal completed`);
+                }, 800); // After animation duration
+            }, 50 + (pokemonIndex === 0 ? 100 : 0)); // Extra delay for first Pokemon
             
-            // Scroll to the card
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Update score with visual feedback
-            if (currentPlayerNum === 1) {
-                player1CurrentScore += pokemonData.total_stats;
-                
-                // Update both score displays
-                player1Score.textContent = player1CurrentScore;
-                if (fixedPlayer1Score) {
-                    fixedPlayer1Score.textContent = player1CurrentScore;
-                    fixedPlayer1Score.classList.add('updated');
-                    setTimeout(() => fixedPlayer1Score.classList.remove('updated'), 1000);
-                }
-                
-                // Visual feedback for in-section score
-                player1Score.parentElement.classList.add('updated');
-                setTimeout(() => player1Score.parentElement.classList.remove('updated'), 1000);
-                
-                // Update leading indicator
-                if (fixedPlayer1Score && fixedPlayer2Score) {
-                    updateLeadingPlayer();
-                }
-            } else {
-                player2CurrentScore += pokemonData.total_stats;
-                
-                // Update both score displays
-                player2Score.textContent = player2CurrentScore;
-                if (fixedPlayer2Score) {
-                    fixedPlayer2Score.textContent = player2CurrentScore;
-                    fixedPlayer2Score.classList.add('updated');
-                    setTimeout(() => fixedPlayer2Score.classList.remove('updated'), 1000);
-                }
-                
-                // Visual feedback for in-section score
-                player2Score.parentElement.classList.add('updated');
-                setTimeout(() => player2Score.parentElement.classList.remove('updated'), 1000);
-                
-                // Update leading indicator
-                if (fixedPlayer1Score && fixedPlayer2Score) {
-                    updateLeadingPlayer();
-                }
-            }
-            
-            // Debug - verify card state
-            console.log(`Card ${cardId} revealed state:`, {
-                hasRevealedClass: cardElement.classList.contains('revealed'),
-                dataRevealed: cardElement.dataset.revealed,
-                inRevealedSet: revealedCards.has(cardId)
-            });
+            // Scroll to the card - with a small delay
+            setTimeout(() => {
+                cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
         } else {
             console.error(`Could not find card element for Player ${currentPlayerNum}, Index ${pokemonIndex}`);
         }
@@ -407,12 +357,47 @@ document.addEventListener('DOMContentLoaded', function() {
         revealedCount++;
         updateRevealProgress();
         
-        // Check if all Pokemon have been revealed - WITH DELAY FOR LAST ONE
+        // Check if all Pokemon have been revealed
         if (revealedCount >= (pokemonList1.length + pokemonList2.length)) {
-            // Add delay before showing the winner to let users see the last Pokemon
-            setTimeout(() => {
-                finalizeBattle();
-            }, 2500); // 2.5 second delay
+            setTimeout(finalizeBattle, 2500);
+        }
+    }
+    
+    // Separate function to update the score to keep the reveal logic cleaner
+    function updateScoreForPokemon(playerNum, statTotal) {
+        if (playerNum === 1) {
+            player1CurrentScore += statTotal;
+            
+            // Update both score displays
+            player1Score.textContent = player1CurrentScore;
+            if (fixedPlayer1Score) {
+                fixedPlayer1Score.textContent = player1CurrentScore;
+                fixedPlayer1Score.classList.add('updated');
+                setTimeout(() => fixedPlayer1Score.classList.remove('updated'), 1000);
+            }
+            
+            // Visual feedback for in-section score
+            player1Score.parentElement.classList.add('updated');
+            setTimeout(() => player1Score.parentElement.classList.remove('updated'), 1000);
+        } else {
+            player2CurrentScore += statTotal;
+            
+            // Update both score displays
+            player2Score.textContent = player2CurrentScore;
+            if (fixedPlayer2Score) {
+                fixedPlayer2Score.textContent = player2CurrentScore;
+                fixedPlayer2Score.classList.add('updated');
+                setTimeout(() => fixedPlayer2Score.classList.remove('updated'), 1000);
+            }
+            
+            // Visual feedback for in-section score
+            player2Score.parentElement.classList.add('updated');
+            setTimeout(() => player2Score.parentElement.classList.remove('updated'), 1000);
+        }
+        
+        // Update leading indicator
+        if (fixedPlayer1Score && fixedPlayer2Score) {
+            updateLeadingPlayer();
         }
     }
     

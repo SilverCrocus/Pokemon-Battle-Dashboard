@@ -249,30 +249,35 @@ button:hover {
     height: 340px;
     perspective: 1000px;
     margin-bottom: 1rem;
-    transform-style: preserve-3d;
+    position: relative;
 }
 
 .pokemon-card.hidden .card-inner {
     transform: rotateY(180deg);
 }
 
-.pokemon-card.revealed .card-inner {
+.pokemon-card.revealed-start .card-inner {
     transform: rotateY(0deg);
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.pokemon-card.revealed.reveal-complete .card-inner {
+    transform: rotateY(0deg);
+    transition: none;
 }
 
 .card-flip {
     width: 100%;
     height: 100%;
-    transition: transform 0.8s;
-    transform-style: preserve-3d;
+    position: relative;
 }
 
 .card-inner {
     position: relative;
     width: 100%;
     height: 100%;
-    transition: transform 0.8s;
     transform-style: preserve-3d;
+    transition: transform 0.8s;
 }
 
 .card-front, .card-back {
@@ -286,13 +291,59 @@ button:hover {
 }
 
 .card-front {
-    background-color: #f8f8f8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transform: rotateY(180deg);
-    -webkit-transform: rotateY(180deg);
-    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f8f8;
+}
+
+.card-back {
+    transform: rotateY(0deg);
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border: 1px solid #ddd;
+}
+
+.pokemon-card.first-pokemon.revealed .card-inner {
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.player-1-card[data-index="0"].revealed .card-inner {
+    box-shadow: 0 0 2px 1px rgba(0,0,0,0.2);
+}
+
+.player-2-card[data-index="0"].revealed .card-inner {
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.pokemon-card[data-revealed="true"] .card-inner {
+    transform: rotateY(0deg) !important;
+}
+
+.pokemon-card.revealed:hover .card-inner,
+.pokemon-card.reveal-complete:hover .card-inner {
+    transform: rotateY(0deg) !important;
+}
+
+.pokemon-card.reveal-complete {
+    animation: none !important;
+}
+
+.pokemon-card.reveal-complete .card-inner {
+    animation: none !important;
+}
+
+.pokemon-card, .card-inner, .card-flip {
+    transform-style: preserve-3d;
+}
+
+@keyframes stabilizeReveal {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(0deg); }
 }
 
 .pokeball {
@@ -313,16 +364,6 @@ button:hover {
     border-radius: 50%;
     top: 40%;
     left: 40%;
-}
-
-.card-back {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ddd;
-    background-color: white;
-    transform: rotateY(0deg);
-    -webkit-transform: rotateY(0deg);
-    z-index: 2;
 }
 
 .pokemon-image {
