@@ -249,6 +249,7 @@ button:hover {
     height: 340px;
     perspective: 1000px;
     margin-bottom: 1rem;
+    transform-style: preserve-3d;
 }
 
 .pokemon-card.hidden .card-inner {
@@ -279,6 +280,7 @@ button:hover {
     width: 100%;
     height: 100%;
     backface-visibility: hidden;
+    -webkit-backface-visibility: hidden; /* Safari support */
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
@@ -289,6 +291,8 @@ button:hover {
     align-items: center;
     justify-content: center;
     transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    z-index: 1;
 }
 
 .pokeball {
@@ -316,6 +320,9 @@ button:hover {
     flex-direction: column;
     border: 1px solid #ddd;
     background-color: white;
+    transform: rotateY(0deg);
+    -webkit-transform: rotateY(0deg);
+    z-index: 2;
 }
 
 .pokemon-image {
@@ -496,6 +503,8 @@ button:hover {
 }
 
 /* Animation stabilizers */
+/* Remove the stabilize animation as it's causing issues */
+/* 
 @keyframes stabilizeReveal {
     from { transform: rotateY(0deg); }
     to { transform: rotateY(0deg); }
@@ -503,4 +512,76 @@ button:hover {
 
 .pokemon-card.reveal-complete .card-inner {
     animation: stabilizeReveal 0.1s forwards;
+} */
+
+/* Fix card reveal animation */
+.pokemon-card {
+    height: 340px;
+    perspective: 1000px;
+    margin-bottom: 1rem;
+    transform-style: preserve-3d;
+}
+
+/* Hide both sides initially to prepare for proper reveal */
+.pokemon-card.hidden .card-inner {
+    transform: rotateY(180deg);
+}
+
+/* Make sure both sides aren't visible simultaneously */
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden; /* Safari support */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card-front {
+    background-color: #f8f8f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    z-index: 1;
+}
+
+.card-back {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ddd;
+    background-color: white;
+    transform: rotateY(0deg);
+    -webkit-transform: rotateY(0deg);
+    z-index: 2;
+}
+
+/* Prevent card flipping when revealing */
+.pokemon-card.revealing .card-inner {
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+/* Ensure all revealed cards maintain consistent state */
+.pokemon-card.revealed .card-inner {
+    transform: rotateY(0deg) !important;
+    -webkit-transform: rotateY(0deg) !important;
+}
+
+/* Remove transitions after animation completes to prevent glitches */
+.pokemon-card.reveal-complete .card-inner {
+    transition: none !important;
+    transform: rotateY(0deg) !important;
+    -webkit-transform: rotateY(0deg) !important;
+    /* Remove animations that might interfere */
+    animation: none !important;
+}
+
+/* Remove or clean up properties that may cause the weird panel effect */
+.pokemon-card[data-revealed="true"] .card-inner {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: rotateY(0deg) !important;
+    -webkit-transform: rotateY(0deg) !important;
 }

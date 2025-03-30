@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add new state tracking for revealed cards
     const revealedCards = new Set(); // Track cards that have been revealed
 
-    // Create a MutationObserver to enforce card revealed state
+    // Create a MutationObserver to enforce card revealed state - with less aggressive behavior
     const cardObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && 
@@ -247,17 +247,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 const card = mutation.target;
                 const cardId = card.dataset.cardId;
                 
-                // If this card should be revealed but isn't, re-reveal it
-                if (cardId && revealedCards.has(cardId) && !card.classList.contains('revealed')) {
-                    console.log(`Re-revealing card ${cardId} that lost its revealed state`);
-                    card.classList.remove('hidden');
+                // Only re-reveal if card is in our registry but has completely lost its revealed state
+                if (cardId && revealedCards.has(cardId) && 
+                    !card.classList.contains('revealed') && 
+                    !card.classList.contains('revealing')) {
+                    console.log(`Re-revealing card ${cardId} that completely lost its revealed state`);
+                    // Apply immediate reveal without animation to prevent flicker
                     card.classList.add('revealed', 'reveal-complete');
+                    card.classList.remove('hidden');
                 }
             }
         });
     });
 
-    // Reveal next Pokemon with improved card handling
+    // Reveal next Pokemon with improved card handling and state control
     function revealNextPokemon() {
         const totalPokemon = pokemonList1.length + pokemonList2.length;
         
@@ -293,8 +296,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`Revealing P${currentPlayerNum} Pokemon ${pokemonIndex}:`, cardElement);
         
         if (cardElement) {
-            // First, make sure all previously revealed cards are still revealed
-            maintainRevealedCards();
+            // Check if this card is already being revealed to prevent double reveals
+            if (cardElement.classList.contains('revealing') || revealedCards.has(`p${currentPlayerNum}-${pokemonIndex}`)) {
+                console.log(`Card P${currentPlayerNum}-${pokemonIndex} is already revealing or revealed. Skipping.`);
+                revealedCount++;
+                updateRevealProgress();
+                return;
+            }
+            
+            // Mark as currently revealing to prevent duplicate reveal operations
+            cardElement.classList.add('revealing');
             
             // Update card with Pokemon data
             updatePokemonCard(cardElement, pokemonData);
@@ -314,14 +325,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`Adding first-pokemon class to ${cardId}`);
             }
             
-            // Start observing this card for attribute changes
-            cardObserver.observe(cardElement, { 
-                attributes: true,
-                attributeFilter: ['class', 'style']
-            });
+            // Start observing this card for attribute changes - but only after initial reveal
+            setTimeout(() => {
+                cardObserver.observe(cardElement, { 
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            }, 1500);
             
-            // IMPORTANT: Add a small delay before revealing to ensure DOM is ready
-            // This fixes the issue with the first Pokemon unrevealing
+            // IMPORTANT: Clean sequential reveal with proper state management
             setTimeout(() => {
                 // Force browser reflow before changing classes
                 void cardElement.offsetWidth;
@@ -332,14 +344,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Schedule adding the reveal-complete class after animation
                 setTimeout(() => {
+                    cardElement.classList.remove('revealing');
                     cardElement.classList.add('reveal-complete');
-                    // Double-check that card is still revealed
-                    if (!cardElement.classList.contains('revealed')) {
-                        console.log(`Card ${cardId} lost revealed state - fixing`);
-                        cardElement.classList.add('revealed');
-                    }
-                }, 1000); // After animation completes
-            }, pokemonIndex === 0 ? 100 : 0); // Small delay only for first Pokemon
+                }, 800);
+            }, 50);
             
             // Scroll to the card
             cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -408,9 +416,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // New function to maintain the revealed state of all cards
+    // New function to maintain the revealed state of all cards - more conservative approach
     function maintainRevealedCards() {
-        // Re-establish the revealed state for all tracked cards
+        // Only fix cards that are completely broken (not showing as revealed)
         revealedCards.forEach(cardId => {
             const [playerPrefix, indexStr] = cardId.split('-');
             const playerNum = playerPrefix.substring(1); // Remove 'p' prefix
@@ -420,11 +428,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const selector = `.player-${playerNum}-card[data-index="${index}"]`;
             const card = container.querySelector(selector);
             
-            if (card) {
-                // Ensure card is still marked as revealed
+            if (card && !card.classList.contains('revealed') && !card.classList.contains('revealing')) {
+                console.log(`Fixing completely broken card: ${cardId}`);
+                // Direct application without animation
                 card.classList.remove('hidden');
-                card.classList.add('revealed');
-                card.dataset.revealed = 'true';
+                card.classList.add('revealed', 'reveal-complete');
             }
         });
     }
