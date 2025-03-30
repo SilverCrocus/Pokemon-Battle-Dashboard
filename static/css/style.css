@@ -247,7 +247,6 @@ button:hover {
 /* Pokemon Card */
 .pokemon-card {
     height: 340px;
-    perspective: 1000px;
     margin-bottom: 1rem;
     position: relative;
 }
@@ -276,18 +275,18 @@ button:hover {
     position: relative;
     width: 100%;
     height: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.8s;
 }
 
 .card-front, .card-back {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden; /* Safari support */
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden; /* Safari support */
 }
 
 .card-front {
@@ -625,4 +624,93 @@ button:hover {
     -webkit-backface-visibility: hidden;
     transform: rotateY(0deg) !important;
     -webkit-transform: rotateY(0deg) !important;
+}
+
+/* SIMPLIFIED CARD STYLING TO FIX FIRST CARD */
+
+/* Base card styling - simple and consistent */
+.pokemon-card {
+    height: 340px;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+/* Simple card inner */
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Card sides */
+.card-front, .card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Hidden state */
+.pokemon-card.hidden .card-front {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    background-color: #f8f8f8;
+}
+
+.pokemon-card.hidden .card-back {
+    display: none;
+    z-index: 1;
+}
+
+/* Revealed state */
+.pokemon-card.revealed .card-front {
+    display: none;
+    z-index: 1;
+}
+
+.pokemon-card.revealed .card-back {
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+    background-color: white;
+    border: 1px solid #ddd;
+}
+
+/* Remove all transform properties that could cause issues */
+.pokemon-card.revealed .card-inner,
+.pokemon-card.revealed.reveal-complete .card-inner {
+    transform: none !important;
+    transition: none !important;
+    -webkit-transform: none !important;
+    animation: none !important;
+}
+
+/* Clear old styles that might interfere */
+.pokemon-card .card-flip {
+    width: 100%;
+    height: 100%;
+}
+
+/* Remove special styling for first pokemon */
+.pokemon-card.first-pokemon.revealed .card-inner {
+    /* Just use standard styling */
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Fix accent styling for Player 2's first Pokemon */
+.player-2-card[data-index="0"] .card-inner {
+    border: 1px solid #ddd !important;
+}
+
+/* Make sure all revealed cards use display: none/block instead of transforms */
+.player-section .pokemon-grid .pokemon-card.revealed .card-inner {
+    transform: none !important;
 }
