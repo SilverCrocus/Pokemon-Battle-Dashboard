@@ -11,20 +11,72 @@
     <div class="container">
         <header>
             <h1>Pokemon Battle Dashboard</h1>
-            <button id="new-battle-btn">Generate New Battle</button>
         </header>
 
-        <div class="loading" id="loading">
+        <!-- Setup Form -->
+        <div class="setup-form" id="setup-form">
+            <h2>Battle Setup</h2>
+            <div class="form-group">
+                <label for="player1-name">Player 1 Name:</label>
+                <input type="text" id="player1-name" value="Player 1">
+            </div>
+            <div class="form-group">
+                <label for="player2-name">Player 2 Name:</label>
+                <input type="text" id="player2-name" value="Player 2">
+            </div>
+            <div class="form-group">
+                <label>Reveal Mode:</label>
+                <div class="radio-group">
+                    <input type="radio" id="auto-reveal" name="reveal-mode" value="auto" checked>
+                    <label for="auto-reveal">Auto Reveal</label>
+                    <input type="radio" id="manual-reveal" name="reveal-mode" value="manual">
+                    <label for="manual-reveal">Manual Reveal</label>
+                </div>
+            </div>
+            <button id="start-battle-btn">Start Battle</button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
             <p>Generating Battle...</p>
         </div>
         
+        <!-- Battle Container -->
         <div class="battle-container" id="battle-container" style="display: none;">
-            <div class="winner-banner" id="winner-banner"></div>
+            <div class="battle-header">
+                <div class="winner-banner" id="winner-banner" style="display: none;"></div>
+                <div class="battle-info">
+                    <p id="battle-status">The battle will reveal Pokémon one by one, alternating between players.</p>
+                </div>
+                <div class="progress-bar">
+                    <div id="reveal-progress-text">Revealing: 0/12 Pokemon</div>
+                    <div class="progress-track">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <!-- Fixed Scoreboard -->
+                <div class="fixed-scoreboard">
+                    <div class="player-score">
+                        <span id="fixed-player1-name">Player 1</span>: <span id="fixed-player1-score" class="score-value">0</span>
+                    </div>
+                    <div class="vs-mini">VS</div>
+                    <div class="player-score">
+                        <span id="fixed-player2-name">Player 2</span>: <span id="fixed-player2-score" class="score-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="reveal-controls">
+                    <button id="reveal-next-btn" style="display: none;">Reveal Next Pokemon</button>
+                    <button id="reveal-all-btn">Reveal All</button>
+                    <button id="new-battle-btn">New Battle</button>
+                </div>
+            </div>
             
             <div class="battle-grid">
                 <div class="player-section">
-                    <h2>Player 1</h2>
+                    <h2 id="player1-header">Player 1</h2>
                     <div class="score-display">Score: <span id="player1-score">0</span></div>
                     <div class="pokemon-grid" id="player1-pokemon"></div>
                 </div>
@@ -32,7 +84,7 @@
                 <div class="vs-section">VS</div>
                 
                 <div class="player-section">
-                    <h2>Player 2</h2>
+                    <h2 id="player2-header">Player 2</h2>
                     <div class="score-display">Score: <span id="player2-score">0</span></div>
                     <div class="pokemon-grid" id="player2-pokemon"></div>
                 </div>
@@ -41,21 +93,30 @@
     </div>
 
     <template id="pokemon-card-template">
-        <div class="pokemon-card">
-            <div class="pokemon-image">
-                <img src="" alt="Pokemon">
-            </div>
-            <div class="pokemon-info">
-                <h3 class="pokemon-name"></h3>
-                <div class="pokemon-types"></div>
-                <div class="pokemon-stats">
-                    <div class="stat hp" title="HP"></div>
-                    <div class="stat attack" title="Attack"></div>
-                    <div class="stat defense" title="Defense"></div>
-                    <div class="stat special-attack" title="Sp. Attack"></div>
-                    <div class="stat special-defense" title="Sp. Defense"></div>
-                    <div class="stat speed" title="Speed"></div>
-                    <div class="stat total" title="Total"></div>
+        <div class="pokemon-card hidden">
+            <div class="card-flip">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <div class="pokeball"></div>
+                    </div>
+                    <div class="card-back">
+                        <div class="pokemon-image">
+                            <img src="" alt="Pokemon">
+                        </div>
+                        <div class="pokemon-info">
+                            <h3 class="pokemon-name"></h3>
+                            <div class="pokemon-types"></div>
+                            <div class="pokemon-stats">
+                                <div class="stat hp" title="HP"></div>
+                                <div class="stat attack" title="Attack"></div>
+                                <div class="stat defense" title="Defense"></div>
+                                <div class="stat special-attack" title="Sp. Attack"></div>
+                                <div class="stat special-defense" title="Sp. Defense"></div>
+                                <div class="stat speed" title="Speed"></div>
+                                <div class="stat total" title="Total"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
