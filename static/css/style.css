@@ -428,3 +428,8 @@ button:hover {
     background-color: #e8f5e9;
     box-shadow: 0 0 10px rgba(76,175,80,0.5);
 }
+
+/* Add a more specific selector to ensure revealed cards stay revealed */
+.player-section .pokemon-grid .pokemon-card.revealed .card-inner {
+    transform: rotateY(0deg) !important; /* Use !important to prevent overrides */
+}

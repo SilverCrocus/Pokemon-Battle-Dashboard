@@ -214,6 +214,10 @@ document.addEventListener('DOMContentLoaded', function() {
             player2Pokemon.appendChild(card);
         }
         
+        // Log the created cards for debugging
+        console.log('Player 1 cards:', player1Pokemon.querySelectorAll('.pokemon-card').length);
+        console.log('Player 2 cards:', player2Pokemon.querySelectorAll('.pokemon-card').length);
+        
         // Calculate the actual total based on the Pokemon we have
         const totalPokemon = pokemonList1.length + pokemonList2.length;
         console.log(`Total Pokemon to reveal: ${totalPokemon}`);
@@ -270,13 +274,23 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Find the card element to update
+        // Create more specific selector to avoid conflicts
+        const parentContainer = currentPlayerNum === 1 ? player1Pokemon : player2Pokemon;
         const selector = `.player-${currentPlayerNum}-card[data-index="${pokemonIndex}"]`;
-        const cardElement = document.querySelector(selector);
+        const cardElement = parentContainer.querySelector(selector);
+        
+        console.log(`Revealing P${currentPlayerNum} Pokemon ${pokemonIndex}:`, cardElement);
         
         if (cardElement) {
             // Update card with Pokemon data
             updatePokemonCard(cardElement, pokemonData);
+            
+            // Mark card with a data attribute for better tracking
+            cardElement.dataset.revealed = 'true';
+            cardElement.dataset.pokemonName = pokemonData.name;
+            
+            // Force reflow before adding the revealed class to ensure animation works properly
+            void cardElement.offsetWidth;
             
             // Reveal the card
             cardElement.classList.remove('hidden');
@@ -325,7 +339,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateLeadingPlayer();
                 }
             }
+        } else {
+            console.error(`Could not find card element for Player ${currentPlayerNum}, Index ${pokemonIndex}`);
         }
+        
+        // Debug: Log all revealed cards after each reveal
+        document.querySelectorAll('.pokemon-card.revealed').forEach(card => {
+            console.log(`Revealed card: P${card.dataset.player} Index ${card.dataset.index} - ${card.dataset.pokemonName || 'Unknown'}`);
+        });
         
         // Increment revealed count and update progress
         revealedCount++;
