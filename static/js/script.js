@@ -200,20 +200,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function createPokemonPlaceholders() {
         console.log('Creating placeholders...');
         
-        // Create placeholders for both players
-        for (let i = 0; i < totalPokemonPerPlayer; i++) {
-            // Player 1 placeholder
-            if (i < pokemonList1.length) {
-                const card = createEmptyPokemonCard(1, i);
-                player1Pokemon.appendChild(card);
-            }
-            
-            // Player 2 placeholder
-            if (i < pokemonList2.length) {
-                const card = createEmptyPokemonCard(2, i);
-                player2Pokemon.appendChild(card);
-            }
+        // Create exactly the number of placeholders needed for each player
+        for (let i = 0; i < pokemonList1.length; i++) {
+            const card = createEmptyPokemonCard(1, i);
+            player1Pokemon.appendChild(card);
         }
+        
+        for (let i = 0; i < pokemonList2.length; i++) {
+            const card = createEmptyPokemonCard(2, i);
+            player2Pokemon.appendChild(card);
+        }
+        
+        // Update the total count for progress tracking
+        totalPokemonPerPlayer = Math.max(pokemonList1.length, pokemonList2.length);
     }
     
     // Create an empty card placeholder
@@ -311,9 +310,12 @@ document.addEventListener('DOMContentLoaded', function() {
         revealedCount++;
         updateRevealProgress();
         
-        // Check if all Pokemon have been revealed
+        // Check if all Pokemon have been revealed - WITH DELAY FOR LAST ONE
         if (revealedCount >= (pokemonList1.length + pokemonList2.length)) {
-            finalizeBattle();
+            // Add delay before showing the winner to let users see the last Pokemon
+            setTimeout(() => {
+                finalizeBattle();
+            }, 2500); // 2.5 second delay
         }
     }
     
@@ -384,6 +386,11 @@ document.addEventListener('DOMContentLoaded', function() {
         winnerBanner.style.display = 'block';
         winnerBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
+        // Add celebration effect if there's a winner
+        if (winner !== "It's a tie") {
+            createConfetti();
+        }
+        
         // Disable reveal buttons
         revealNextBtn.disabled = true;
         revealAllBtn.disabled = true;
@@ -395,9 +402,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reveal all remaining Pokemon
     function revealAllPokemon() {
         if (revealInterval) clearInterval(revealInterval);
-        while (revealedCount < (pokemonList1.length + pokemonList2.length)) {
+        
+        const remainingCount = (pokemonList1.length + pokemonList2.length) - revealedCount;
+        
+        if (remainingCount <= 0) return;
+        
+        // Reveal them one by one with a short delay between each
+        let revealed = 0;
+        const revealOne = () => {
             revealNextPokemon();
-        }
+            revealed++;
+            
+            if (revealed < remainingCount) {
+                setTimeout(revealOne, 300); // 300ms between reveals when "Reveal All" is clicked
+            }
+        };
+        
+        revealOne();
     }
     
     // Update which player is leading
