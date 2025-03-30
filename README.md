@@ -1,7 +1,5 @@
 # Pokemon Battle Dashboard
 
-![Pokemon Battle Dashboard](screenshots/dashboard.png)
-
 A web application that automates Pokemon battles between two players, with dramatic revealing of Pokemon and stat calculations.
 
 ## Features
@@ -20,9 +18,6 @@ A web application that automates Pokemon battles between two players, with drama
 
 ### Battle in Progress
 ![Battle in Progress](screenshots/battle.png)
-
-### Winner Announcement
-![Winner](screenshots/winner.png)
 
 ## How It Works
 
