@@ -236,7 +236,28 @@ document.addEventListener('DOMContentLoaded', function() {
         return cardElement;
     }
     
-    // Reveal next Pokemon
+    // Add new state tracking for revealed cards
+    const revealedCards = new Set(); // Track cards that have been revealed
+
+    // Create a MutationObserver to enforce card revealed state
+    const cardObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && 
+                (mutation.attributeName === 'class' || mutation.attributeName === 'style')) {
+                const card = mutation.target;
+                const cardId = card.dataset.cardId;
+                
+                // If this card should be revealed but isn't, re-reveal it
+                if (cardId && revealedCards.has(cardId) && !card.classList.contains('revealed')) {
+                    console.log(`Re-revealing card ${cardId} that lost its revealed state`);
+                    card.classList.remove('hidden');
+                    card.classList.add('revealed', 'reveal-complete');
+                }
+            }
+        });
+    });
+
+    // Reveal next Pokemon with improved card handling
     function revealNextPokemon() {
         const totalPokemon = pokemonList1.length + pokemonList2.length;
         
@@ -248,18 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Alternate between players
         const currentPlayerNum = (revealedCount % 2) + 1;
         const pokemonIndex = Math.floor(revealedCount / 2);
-        
-        // Verify we're not trying to reveal a Pokemon that doesn't exist
-        const maxIndex1 = pokemonList1.length - 1;
-        const maxIndex2 = pokemonList2.length - 1;
-        
-        if ((currentPlayerNum === 1 && pokemonIndex > maxIndex1) || 
-            (currentPlayerNum === 2 && pokemonIndex > maxIndex2)) {
-            console.log(`Skipping invalid Pokemon: Player ${currentPlayerNum}, Index ${pokemonIndex}`);
-            revealedCount++;
-            updateRevealProgress();
-            return;
-        }
         
         // Get the corresponding Pokemon data
         let pokemonData;
@@ -274,27 +283,63 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Create more specific selector to avoid conflicts
+        // Use the parent container for more specific selection
         const parentContainer = currentPlayerNum === 1 ? player1Pokemon : player2Pokemon;
+        
+        // Create a very specific selector
         const selector = `.player-${currentPlayerNum}-card[data-index="${pokemonIndex}"]`;
         const cardElement = parentContainer.querySelector(selector);
         
         console.log(`Revealing P${currentPlayerNum} Pokemon ${pokemonIndex}:`, cardElement);
         
         if (cardElement) {
+            // First, make sure all previously revealed cards are still revealed
+            maintainRevealedCards();
+            
             // Update card with Pokemon data
             updatePokemonCard(cardElement, pokemonData);
             
-            // Mark card with a data attribute for better tracking
+            // Mark the card as revealed in our tracking
+            const cardId = `p${currentPlayerNum}-${pokemonIndex}`;
+            revealedCards.add(cardId);
+            
+            // Mark with multiple indicators to ensure it stays revealed
             cardElement.dataset.revealed = 'true';
             cardElement.dataset.pokemonName = pokemonData.name;
+            cardElement.dataset.cardId = cardId;
             
-            // Force reflow before adding the revealed class to ensure animation works properly
-            void cardElement.offsetWidth;
+            // Add first-pokemon class if this is the first reveal for this player
+            if (pokemonIndex === 0) {
+                cardElement.classList.add('first-pokemon');
+                console.log(`Adding first-pokemon class to ${cardId}`);
+            }
             
-            // Reveal the card
-            cardElement.classList.remove('hidden');
-            cardElement.classList.add('revealed');
+            // Start observing this card for attribute changes
+            cardObserver.observe(cardElement, { 
+                attributes: true,
+                attributeFilter: ['class', 'style']
+            });
+            
+            // IMPORTANT: Add a small delay before revealing to ensure DOM is ready
+            // This fixes the issue with the first Pokemon unrevealing
+            setTimeout(() => {
+                // Force browser reflow before changing classes
+                void cardElement.offsetWidth;
+                
+                // Reveal the card
+                cardElement.classList.remove('hidden');
+                cardElement.classList.add('revealed');
+                
+                // Schedule adding the reveal-complete class after animation
+                setTimeout(() => {
+                    cardElement.classList.add('reveal-complete');
+                    // Double-check that card is still revealed
+                    if (!cardElement.classList.contains('revealed')) {
+                        console.log(`Card ${cardId} lost revealed state - fixing`);
+                        cardElement.classList.add('revealed');
+                    }
+                }, 1000); // After animation completes
+            }, pokemonIndex === 0 ? 100 : 0); // Small delay only for first Pokemon
             
             // Scroll to the card
             cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -339,14 +384,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateLeadingPlayer();
                 }
             }
+            
+            // Debug - verify card state
+            console.log(`Card ${cardId} revealed state:`, {
+                hasRevealedClass: cardElement.classList.contains('revealed'),
+                dataRevealed: cardElement.dataset.revealed,
+                inRevealedSet: revealedCards.has(cardId)
+            });
         } else {
             console.error(`Could not find card element for Player ${currentPlayerNum}, Index ${pokemonIndex}`);
         }
-        
-        // Debug: Log all revealed cards after each reveal
-        document.querySelectorAll('.pokemon-card.revealed').forEach(card => {
-            console.log(`Revealed card: P${card.dataset.player} Index ${card.dataset.index} - ${card.dataset.pokemonName || 'Unknown'}`);
-        });
         
         // Increment revealed count and update progress
         revealedCount++;
@@ -361,6 +408,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // New function to maintain the revealed state of all cards
+    function maintainRevealedCards() {
+        // Re-establish the revealed state for all tracked cards
+        revealedCards.forEach(cardId => {
+            const [playerPrefix, indexStr] = cardId.split('-');
+            const playerNum = playerPrefix.substring(1); // Remove 'p' prefix
+            const index = parseInt(indexStr);
+            
+            const container = playerNum === '1' ? player1Pokemon : player2Pokemon;
+            const selector = `.player-${playerNum}-card[data-index="${index}"]`;
+            const card = container.querySelector(selector);
+            
+            if (card) {
+                // Ensure card is still marked as revealed
+                card.classList.remove('hidden');
+                card.classList.add('revealed');
+                card.dataset.revealed = 'true';
+            }
+        });
+    }
+
+    // On window resize, force maintenance of revealed cards
+    window.addEventListener('resize', maintainRevealedCards);
+
+    // After each scroll event, check revealed cards
+    window.addEventListener('scroll', debounce(maintainRevealedCards, 100));
+
+    // Utility function for debouncing
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
+
     // Start auto-revealing Pokemon
     function startAutoReveal() {
         if (revealInterval) clearInterval(revealInterval);

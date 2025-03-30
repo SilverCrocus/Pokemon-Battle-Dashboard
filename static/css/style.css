@@ -433,3 +433,74 @@ button:hover {
 .player-section .pokemon-grid .pokemon-card.revealed .card-inner {
     transform: rotateY(0deg) !important; /* Use !important to prevent overrides */
 }
+
+/* Strengthen card reveal state permanence */
+.pokemon-card.revealed {
+    z-index: 5; /* Make revealed cards appear above others */
+}
+
+/* Even more specific selector to ensure revealed cards stay revealed */
+.player-section .pokemon-grid .pokemon-card.revealed .card-inner {
+    transform: rotateY(0deg) !important; /* Use !important to prevent overrides */
+}
+
+/* Add a stronger override for the inner card animation */
+.pokemon-card.revealed .card-inner,
+.pokemon-card[data-revealed="true"] .card-inner {
+    transform: rotateY(0deg) !important; 
+    transition: transform 0.8s;
+}
+
+/* Add animation completion class */
+.pokemon-card.reveal-complete .card-inner {
+    transition: none !important; /* Remove transition after animation completes */
+}
+
+/* Add a special class for the first Pokemon to ensure it stays visible */
+.pokemon-card.first-pokemon.revealed .card-inner {
+    transform: rotateY(0deg) !important;
+    box-shadow: 0 0 2px 1px rgba(0,0,0,0.2); /* Subtle highlight */
+}
+
+/* Additional specificity for first Pokemon card in each team */
+.player-section .pokemon-grid .pokemon-card.first-pokemon .card-inner {
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.player-section .pokemon-grid .pokemon-card.first-pokemon.revealed .card-inner {
+    transform: rotateY(0deg) !important;
+    border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.player-section .pokemon-grid .pokemon-card.reveal-complete .card-inner {
+    transition: none !important;
+}
+
+/* Fix z-index and positioning to prevent display issues */
+.pokemon-card[data-revealed="true"] {
+    z-index: 10; 
+}
+
+/* Override any potential style that might cause unrevealing */
+.pokemon-card[data-revealed="true"] .card-inner,
+.pokemon-card.revealed[data-revealed="true"] .card-inner,
+.pokemon-card.revealed.first-pokemon .card-inner {
+    transform: rotateY(0deg) !important;
+    will-change: transform;
+    backface-visibility: visible;
+}
+
+/* Fix hover effects that might interfere with card state */
+.pokemon-card.revealed:hover .card-inner {
+    transform: rotateY(0deg) !important;
+}
+
+/* Animation stabilizers */
+@keyframes stabilizeReveal {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(0deg); }
+}
+
+.pokemon-card.reveal-complete .card-inner {
+    animation: stabilizeReveal 0.1s forwards;
+}
