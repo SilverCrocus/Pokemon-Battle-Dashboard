@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Battle Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pokemon Battle Dashboard</h1>
+            <button id="new-battle-btn">Generate New Battle</button>
+        </header>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating Battle...</p>
+        </div>
+        
+        <div class="battle-container" id="battle-container" style="display: none;">
+            <div class="winner-banner" id="winner-banner"></div>
+            
+            <div class="battle-grid">
+                <div class="player-section">
+                    <h2>Player 1</h2>
+                    <div class="score-display">Score: <span id="player1-score">0</span></div>
+                    <div class="pokemon-grid" id="player1-pokemon"></div>
+                </div>
+                
+                <div class="vs-section">VS</div>
+                
+                <div class="player-section">
+                    <h2>Player 2</h2>
+                    <div class="score-display">Score: <span id="player2-score">0</span></div>
+                    <div class="pokemon-grid" id="player2-pokemon"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <template id="pokemon-card-template">
+        <div class="pokemon-card">
+            <div class="pokemon-image">
+                <img src="" alt="Pokemon">
+            </div>
+            <div class="pokemon-info">
+                <h3 class="pokemon-name"></h3>
+                <div class="pokemon-types"></div>
+                <div class="pokemon-stats">
+                    <div class="stat hp" title="HP"></div>
+                    <div class="stat attack" title="Attack"></div>
+                    <div class="stat defense" title="Defense"></div>
+                    <div class="stat special-attack" title="Sp. Attack"></div>
+                    <div class="stat special-defense" title="Sp. Defense"></div>
+                    <div class="stat speed" title="Speed"></div>
+                    <div class="stat total" title="Total"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
