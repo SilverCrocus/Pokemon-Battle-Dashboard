@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Pokemon Team Setup</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Manual Team Builder</h1>
+        </header>
+
+        <!-- Removed setup-form class from main wrapper -->
+        <div> 
+            <div class="manual-setup-header" style="background-color: #1e1e1e; border-radius: 8px; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); max-width: 800px; margin: 0 auto 2rem;">
+                <h2 style="text-align: center; margin-bottom: 1.5rem; color: #ff5c69;">Build Your Teams</h2>
+                <!-- Player Name Inputs Removed -->
+            </div> <!-- Close manual-setup-header -->
+
+            <!-- Battle Grid Layout for Manual Setup -->
+            <div class="battle-grid manual-setup-grid">
+                <!-- Player 1 Section -->
+                <div class="player-section">
+                    <h2 id="player1-header" contenteditable="true" title="Click to edit name">Player 1 Team</h2>
+                    <div class="score-display team-stats" id="player1-team-stats">Total Stats: 0</div>
+                    <div class="pokemon-grid" id="player1-pokemon-selection-grid">
+                        <!-- 6 Card Slots for Player 1 -->
+                        {% for i in range(6) %}
+                        <div class="pokemon-card manual-input-mode" data-player="1" data-index="{{ i }}">
+                            <div class="card-inner">
+                                <!-- Input Face (Visible Initially) -->
+                                <div class="card-front manual-input-face">
+                                    <div class="pokemon-selector">
+                                        <input type="text" class="pokemon-input-in-card" data-player="1" data-index="{{ i }}" placeholder="Type Pokémon {{ i+1 }}...">
+                                        <div class="autocomplete-dropdown"></div>
+                                    </div>
+                                    <button class="remove-pokemon" style="display: none;" data-player="1" data-index="{{ i }}">&times;</button>
+                                </div>
+                                <!-- Details Face (Hidden Initially) -->
+                                <div class="card-back manual-details-face">
+                                    <div class="pokemon-image"><img src="" alt=""></div>
+                                    <div class="pokemon-info">
+                                        <h3 class="pokemon-name"></h3>
+                                        <div class="pokemon-types"></div>
+                                        <div class="pokemon-stats">
+                                            <div class="stat hp"></div> <div class="stat attack"></div> <div class="stat defense"></div>
+                                            <div class="stat special-attack"></div> <div class="stat special-defense"></div> <div class="stat speed"></div>
+                                            <div class="stat total"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- VS Section -->
+                <div class="vs-section">VS</div>
+
+                <!-- Player 2 Section -->
+                <div class="player-section">
+                    <h2 id="player2-header" contenteditable="true" title="Click to edit name">Player 2 Team</h2>
+                    <div class="score-display team-stats" id="player2-team-stats">Total Stats: 0</div>
+                    <div class="pokemon-grid" id="player2-pokemon-selection-grid">
+                        <!-- 6 Card Slots for Player 2 -->
+                         {% for i in range(6) %}
+                        <div class="pokemon-card manual-input-mode" data-player="2" data-index="{{ i }}">
+                            <div class="card-inner">
+                                <!-- Input Face (Visible Initially) -->
+                                <div class="card-front manual-input-face">
+                                     <div class="pokemon-selector">
+                                        <input type="text" class="pokemon-input-in-card" data-player="2" data-index="{{ i }}" placeholder="Type Pokémon {{ i+1 }}...">
+                                        <div class="autocomplete-dropdown"></div>
+                                    </div>
+                                     <button class="remove-pokemon" style="display: none;" data-player="2" data-index="{{ i }}">&times;</button>
+                                </div>
+                                <!-- Details Face (Hidden Initially) -->
+                                <div class="card-back manual-details-face">
+                                    <div class="pokemon-image"><img src="" alt=""></div>
+                                    <div class="pokemon-info">
+                                        <h3 class="pokemon-name"></h3>
+                                        <div class="pokemon-types"></div>
+                                        <div class="pokemon-stats">
+                                            <div class="stat hp"></div> <div class="stat attack"></div> <div class="stat defense"></div>
+                                            <div class="stat special-attack"></div> <div class="stat special-defense"></div> <div class="stat speed"></div>
+                                            <div class="stat total"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+             <div style="text-align: center; margin-top: 2rem;">
+                <button id="start-manual-battle-btn" class="button">Start Battle with These Teams</button>
+                 <a href="/" style="display: block; margin-top: 1rem; color: #aaa;">Cancel and Go Back</a>
+            </div>
+        <!-- Removed closing div for manual-setup-header as it was closed earlier -->
+    </div>
+
+    <!-- Link to the JS file -->
+    <script src="{{ url_for('static', filename='js/manual_setup.js') }}"></script>
+</body>
+</html>

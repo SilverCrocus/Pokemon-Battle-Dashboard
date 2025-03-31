@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const player1NameInput = document.getElementById('player1-name');
     const player2NameInput = document.getElementById('player2-name');
     const autoRevealRadio = document.getElementById('auto-reveal');
-    
+    const manualRevealRadio = document.getElementById('manual-reveal');
+
     // DOM elements - Battle
     const loadingElement = document.getElementById('loading');
     const battleContainer = document.getElementById('battle-container');
@@ -43,9 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let revealInterval = null;
     let player1Name = "Player 1";
     let player2Name = "Player 2";
-    let isAutoReveal = true;
-    let pokemonList1 = []; // renamed from player1Pokemon to avoid conflict with DOM element
-    let pokemonList2 = []; // renamed from player2Pokemon to avoid conflict with DOM element
+    let isAutoReveal = true; // For random mode reveal
+    // Removed currentBattleMode, allPokemonNames, activeAutocomplete
+    let pokemonList1 = []; // Will hold Pokemon data for the current battle (random or manual)
+    let pokemonList2 = []; // Will hold Pokemon data for the current battle (random or manual)
     let battleInProgress = false; // Add flag to track battle state
     let lastBattleStartTime = 0; // Track when the last battle started
 
@@ -108,10 +110,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Implementation depends on where you want to show these stats
     }
 
-    // Start a new battle - MAIN FUNCTION THAT NEEDS TO WORK
-    function startBattle() {
-        console.log('Starting battle...');
-        
+
+    // Start a new RANDOM battle
+    function startBattle() { // Renamed back, only handles random now
+        console.log('Starting random battle...');
+
         // Prevent multiple rapid API calls - enforce a 3 second cooldown
         const now = Date.now();
         if (now - lastBattleStartTime < 3000) {
@@ -129,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set battle in progress
         battleInProgress = true;
         
-        // Get player names and reveal mode
+        // Get player names and reveal mode for random battle
         player1Name = player1NameInput.value || "Player 1";
         player2Name = player2NameInput.value || "Player 2";
         isAutoReveal = autoRevealRadio.checked;
@@ -141,24 +144,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (fixedPlayer1Name) fixedPlayer1Name.textContent = player1Name;
         if (fixedPlayer2Name) fixedPlayer2Name.textContent = player2Name;
 
-        // Set up reveal button based on mode
-        if (revealNextBtn) {
-            revealNextBtn.style.display = isAutoReveal ? 'none' : 'inline-block';
-        }
-
         // Hide setup, show loading
         setupForm.style.display = 'none';
         loadingElement.style.display = 'flex';
         battleContainer.style.display = 'none';
-        
-        // Reset state
+
+        // Reset state for random battle
         revealedCount = 0;
         player1CurrentScore = 0;
         player2CurrentScore = 0;
-        pokemonList1 = [];
+        pokemonList1 = []; // Clear previous lists
         pokemonList2 = [];
-        
-        // Clear previous Pokemon - make sure to completely empty the containers
+
+        // Clear previous Pokemon display
         player1Pokemon.innerHTML = '';
         player2Pokemon.innerHTML = '';
         
@@ -171,59 +169,65 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Hide winner banner
         winnerBanner.style.display = 'none';
-        
-        console.log('Fetching battle data from API...');
-        
+
+        // Set up reveal buttons based on mode
+        if (revealNextBtn) {
+            revealNextBtn.style.display = isAutoReveal ? 'none' : 'inline-block';
+        }
+        if (revealAllBtn) revealAllBtn.style.display = 'inline-block';
+
+        console.log('Fetching random battle data from API...');
         // Fetch new battle data
-        fetch('/api/battle')
+        fetch('/api/battle') // This endpoint remains for random battles
             .then(response => {
-                console.log('API Response received:', response);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                console.log('Random API Response received:', response);
                 return response.json();
             })
             .then(data => {
-                console.log('Battle data processed successfully');
-                // Store battle data
-                battleData = data;
-                
-                // Store Pokemon data - ensure exactly 6 per player
-                pokemonList1 = data.player1.pokemon.slice(0, 6);
-                pokemonList2 = data.player2.pokemon.slice(0, 6);
-                
+                console.log('Random battle data processed successfully');
+                battleData = data; // Store raw data if needed for debugging or future features
+
+                // Store Pokemon data from the random fetch
+                pokemonList1 = (data.player1?.pokemon || []);
+                pokemonList2 = (data.player2?.pokemon || []);
+
+                // Ensure exactly 6 pokemon, pad with null if necessary (though backend should provide 6)
+                while (pokemonList1.length < 6) pokemonList1.push(null);
+                while (pokemonList2.length < 6) pokemonList2.push(null);
+                pokemonList1 = pokemonList1.slice(0, 6);
+                pokemonList2 = pokemonList2.slice(0, 6);
+
                 // Log the actual number of Pokemon
-                console.log(`Player 1 Pokemon: ${pokemonList1.length}, Player 2 Pokemon: ${pokemonList2.length}`);
-                
-                // Fixed count - always 6 per player
-                totalPokemonPerPlayer = 6;
-                
-                // Update progress
-                updateRevealProgress();
-                
-                // Hide loading, show battle
+                console.log(`Player 1 Pokemon: ${pokemonList1.filter(p => p).length}, Player 2 Pokemon: ${pokemonList2.filter(p => p).length}`);
+
+                totalPokemonPerPlayer = 6; // Fixed count
+
+                updateRevealProgress(); // Update progress bar
+
                 loadingElement.style.display = 'none';
                 battleContainer.style.display = 'block';
-                
-                // Make sure containers are empty before creating new cards
-                player1Pokemon.innerHTML = '';
+
+                player1Pokemon.innerHTML = ''; // Clear battle area grids
                 player2Pokemon.innerHTML = '';
-                
-                // Create placeholders for Pokemon cards - exactly 6 per team
-                createPokemonPlaceholders();
-                
-                // If auto-reveal is enabled, start revealing
+
+                createPokemonPlaceholders(); // Create placeholders in battle area
+
                 if (isAutoReveal) {
                     startAutoReveal();
                 }
             })
             .catch(error => {
-                console.error('Error generating battle:', error);
+                console.error('Error generating random battle:', error);
                 loadingElement.style.display = 'none';
-                setupForm.style.display = 'block';
-                alert('Error generating battle. Please try again.');
+                setupForm.style.display = 'block'; // Show setup form again
+                alert('Error generating random battle. Please try again.');
                 battleInProgress = false; // Reset the flag on error
             });
     }
 
-    // Create placeholders for all Pokemon cards - ensure exactly 6 per player
+
+    // Create placeholders for RANDOM battle mode cards
     function createPokemonPlaceholders() {
         console.log('Creating placeholders...');
         
@@ -268,8 +272,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return cardElement;
     }
-    
-    // Reveal next Pokemon
+
+
+    // Reveal next Pokemon (Only used in RANDOM mode reveal)
     function revealNextPokemon() {
         if (revealedCount >= totalPokemonPerPlayer * 2) return;
         
@@ -537,9 +542,195 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Load battle stats
-    loadBattleStats();
+    // --- Event Listeners ---
 
-    // Log when the page is fully loaded
-    console.log('DOM fully loaded and parsed');
+    // Mode Selection Change
+    if (randomModeRadio && manualModeRadio) {
+        document.querySelectorAll('input[name="battle-mode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                currentBattleMode = this.value;
+                console.log(`Battle mode changed to: ${currentBattleMode}`);
+                if (currentBattleMode === 'manual') {
+                    manualSelectionArea.style.display = 'block';
+                    // Optionally hide reveal mode selection as it's not relevant for manual
+                    document.querySelector('label[for="auto-reveal"]').parentElement.parentElement.style.display = 'none';
+                } else {
+                    manualSelectionArea.style.display = 'none';
+                     // Show reveal mode selection again
+                    document.querySelector('label[for="auto-reveal"]').parentElement.parentElement.style.display = 'block';
+                }
+                // Reset selections if switching back to random? Or keep them? Decide on behavior.
+                // For now, let's keep them, but reset scores if needed.
+            });
+        });
+    }
+
+    // CRITICAL: Add one (and only one) click handler for the start battle button
+    if (startBattleBtn) {
+        console.log('Adding click handlers to start battle button');
+
+        // Remove any existing event listeners (not directly possible but safeguard)
+        startBattleBtn.onclick = null;
+
+        // Just use a single event listener approach
+        startBattleBtn.addEventListener('click', function(e) {
+            // Prevent any default action or propagation that might trigger duplicate events
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('Start battle button clicked!');
+            startBattle(); // This function now handles both modes
+        });
+    }
+
+    // Other event listeners
+    if (revealNextBtn) revealNextBtn.addEventListener('click', revealNextPokemon); // Only relevant for random manual reveal
+    if (revealAllBtn) revealAllBtn.addEventListener('click', revealAllPokemon); // Only relevant for random mode
+    if (newBattleBtn) {
+        newBattleBtn.addEventListener('click', () => {
+            if (revealInterval) clearInterval(revealInterval);
+            setupForm.style.display = 'block';
+            battleContainer.style.display = 'none';
+            revealNextBtn.disabled = false; // Re-enable buttons
+            revealAllBtn.disabled = false;
+
+            // Reset manual selection UI if it exists
+            if (manualSelectionArea) {
+                 allPokemonInputs.forEach(input => input.value = ''); // Clear inputs
+                 if(player1SelectedPokemonDiv) player1SelectedPokemonDiv.innerHTML = ''; // Clear previews
+                 if(player2SelectedPokemonDiv) player2SelectedPokemonDiv.innerHTML = '';
+                 if(player1TeamStatsDiv) player1TeamStatsDiv.textContent = 'Total Stats: 0'; // Reset stats display
+                 if(player2TeamStatsDiv) player2TeamStatsDiv.textContent = 'Total Stats: 0';
+                 pokemonList1.fill(null); // Clear internal state
+                 pokemonList2.fill(null);
+            }
+             // Reset scores
+            player1CurrentScore = 0;
+            player2CurrentScore = 0;
+            player1Score.textContent = '0';
+            player2Score.textContent = '0';
+            if (fixedPlayer1Score) fixedPlayer1Score.textContent = '0';
+            if (fixedPlayer2Score) fixedPlayer2Score.textContent = '0';
+            updateLeadingPlayer(); // Reset leading indicator
+
+        battleInProgress = false; // Reset battle flag
+        });
+    }
+
+    // Function to display a battle based on data (used for manual battles loaded from localStorage)
+    function displayManualBattle(data) {
+        console.log("Displaying pre-built manual battle...");
+        player1Name = data.player1Name;
+        player2Name = data.player2Name;
+        pokemonList1 = data.player1Pokemon;
+        pokemonList2 = data.player2Pokemon;
+
+        // Update names in UI
+        player1Header.textContent = player1Name;
+        player2Header.textContent = player2Name;
+        if (fixedPlayer1Name) fixedPlayer1Name.textContent = player1Name;
+        if (fixedPlayer2Name) fixedPlayer2Name.textContent = player2Name;
+
+        // Calculate scores
+        player1CurrentScore = pokemonList1.reduce((sum, p) => sum + (p ? p.total_stats : 0), 0);
+        player2CurrentScore = pokemonList2.reduce((sum, p) => sum + (p ? p.total_stats : 0), 0);
+
+        // Update score displays
+        player1Score.textContent = player1CurrentScore;
+        player2Score.textContent = player2CurrentScore;
+        if (fixedPlayer1Score) fixedPlayer1Score.textContent = player1CurrentScore;
+        if (fixedPlayer2Score) fixedPlayer2Score.textContent = player2CurrentScore;
+        updateLeadingPlayer();
+
+        // Hide setup, show battle container (no loading needed)
+        setupForm.style.display = 'none';
+        loadingElement.style.display = 'none';
+        battleContainer.style.display = 'block';
+
+        // Hide reveal buttons
+        if (revealNextBtn) revealNextBtn.style.display = 'none';
+        if (revealAllBtn) revealAllBtn.style.display = 'none';
+
+        // Clear existing battle grids
+        player1Pokemon.innerHTML = '';
+        player2Pokemon.innerHTML = '';
+
+        // Directly display all selected Pokemon cards
+        pokemonList1.forEach((pokemon, index) => {
+            if (pokemon) {
+                // Need a function to create the card element directly from data
+                const cardElement = createPopulatedPokemonCard(pokemon, 1, index);
+                player1Pokemon.appendChild(cardElement);
+            }
+        });
+        pokemonList2.forEach((pokemon, index) => {
+            if (pokemon) {
+                const cardElement = createPopulatedPokemonCard(pokemon, 2, index);
+                player2Pokemon.appendChild(cardElement);
+            }
+        });
+
+        // Set progress to 100%
+        revealedCount = 12; // Mark all as "revealed"
+        updateRevealProgress();
+
+        // Finalize battle immediately
+        finalizeBattle();
+        battleInProgress = false; // Ensure flag is reset
+    }
+
+    // Helper function to create a populated card (similar to manual_setup.js one but adapted)
+    function createPopulatedPokemonCard(pokemonData, playerNum, index) {
+        const card = pokemonCardTemplate.content.cloneNode(true);
+        const cardElement = card.querySelector('.pokemon-card');
+
+        // Add identifiers
+        cardElement.classList.add(`player-${playerNum}-card`);
+        cardElement.dataset.index = index;
+        cardElement.dataset.player = playerNum;
+
+        // Populate with data using the existing function
+        updatePokemonCard(cardElement, pokemonData);
+
+        // Make visible immediately
+        cardElement.classList.remove('hidden');
+        cardElement.classList.add('revealed', 'permanently-revealed');
+
+        return cardElement;
+    }
+
+
+    // --- Initialization ---
+    function initialize() {
+        console.log('Initializing dashboard...');
+        loadBattleStats();
+
+        // Check for manual battle data from localStorage
+        const manualDataString = localStorage.getItem('manualBattleData');
+        if (manualDataString) {
+            console.log('Found manual battle data in localStorage.');
+            try {
+                const manualData = JSON.parse(manualDataString);
+                // Clear the data immediately after reading
+                localStorage.removeItem('manualBattleData');
+                console.log('Manual battle data cleared from localStorage.');
+                // Display the manual battle instead of showing setup
+                displayManualBattle(manualData);
+            } catch (e) {
+                console.error("Error parsing manual battle data from localStorage:", e);
+                localStorage.removeItem('manualBattleData'); // Clear corrupted data
+                // Fallback to showing setup form
+                setupForm.style.display = 'block';
+            }
+        } else {
+            // No manual data, show the setup form for random battle
+            console.log('No manual battle data found. Displaying setup form.');
+            setupForm.style.display = 'block';
+        }
+
+        // Log when the page is fully loaded and initialized
+        console.log('DOM fully loaded and parsed, initialization complete.');
+    }
+
+    initialize(); // Run initialization logic
 });

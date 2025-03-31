@@ -31,7 +31,7 @@ h1 {
     text-align: center;
 }
 
-button {
+button, .button { /* Added .button for anchor tag styling */
     background-color: #ff5c69; /* Brighter red for dark mode */
     color: white;
     border: none;
@@ -40,9 +40,11 @@ button {
     cursor: pointer;
     font-size: 1rem;
     transition: background-color 0.3s;
+    text-decoration: none; /* For anchor tags */
+    display: inline-block; /* For anchor tags */
 }
 
-button:hover {
+button:hover, .button:hover {
     background-color: #ff3c4a;
 }
 
@@ -205,6 +207,18 @@ button:hover {
     margin-bottom: 0.5rem;
     color: #e0e0e0;
 }
+/* Make player headers editable */
+.player-section h2[contenteditable="true"] {
+    cursor: pointer;
+    border-bottom: 1px dashed #555;
+    padding-bottom: 0.2rem;
+}
+.player-section h2[contenteditable="true"]:focus {
+    outline: none;
+    border-bottom: 1px solid #ff5c69;
+    background-color: #2d2d2d;
+}
+
 
 .score-display {
     font-size: 1.25rem;
@@ -243,7 +257,8 @@ button:hover {
 /* Pokemon Grid */
 .pokemon-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    /* Adjusted minmax for potentially smaller screens / more cards */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
 }
 
@@ -252,34 +267,10 @@ button:hover {
     height: 340px;
     perspective: 1000px;
     margin-bottom: 1rem;
+    background-color: transparent; /* Ensure card itself has no background */
 }
 
-.pokemon-card.hidden .card-inner {
-    transform: rotateY(180deg);
-}
-
-.pokemon-card.revealed .card-inner {
-    transform: rotateY(0deg) !important;
-    transition: transform 0.8s;
-}
-
-/* Add a class that will override other transitions */
-.pokemon-card.permanently-revealed .card-inner {
-    transform: rotateY(0deg) !important;
-    transition: none !important; /* Disable transitions for permanently revealed cards */
-}
-
-/* Make sure revealed cards can't transition back */
-.pokemon-card.revealed:not(.hidden) .card-inner {
-    transform: rotateY(0deg) !important;
-}
-
-.card-flip {
-    width: 100%;
-    height: 100%;
-    transition: transform 0.8s;
-    transform-style: preserve-3d;
-}
+/* Removed .card-flip wrapper as it's redundant */
 
 .card-inner {
     position: relative;
@@ -289,29 +280,29 @@ button:hover {
     transform-style: preserve-3d;
 }
 
-.card-front, .card-back {
+/* Common styles for both faces */
+.card-front, .card-back, .manual-input-face, .manual-details-face {
     position: absolute;
     width: 100%;
     height: 100%;
     backface-visibility: hidden;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column; /* Default flex direction */
 }
 
+/* Battle Card Front (Pokeball) */
 .card-front {
     background-color: #2d2d2d;
-    display: flex;
     align-items: center;
     justify-content: center;
-    transform: rotateY(180deg);
+    transform: rotateY(180deg); /* Hidden initially in battle */
 }
 
 .pokeball {
     width: 80px;
     height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .pokeball img {
@@ -319,11 +310,13 @@ button:hover {
     max-height: 100%;
 }
 
+/* Battle Card Back (Details) */
 .card-back {
-    display: flex;
-    flex-direction: column;
     border: 1px solid #444;
     background-color: #2d2d2d;
+    transform: rotateY(0deg); /* Visible initially in battle */
+    justify-content: flex-start;
+    align-items: stretch;
 }
 
 .pokemon-image {
@@ -332,6 +325,7 @@ button:hover {
     justify-content: center;
     align-items: center;
     background-color: #242424;
+    flex-shrink: 0;
 }
 
 .pokemon-image img {
@@ -341,17 +335,20 @@ button:hover {
 
 .pokemon-info {
     padding: 1rem;
+    flex-grow: 1; /* Allow info to take remaining space */
 }
 
 .pokemon-name {
     margin-bottom: 0.5rem;
     color: #e0e0e0;
+    text-align: center;
 }
 
 .pokemon-types {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1rem;
+    justify-content: center;
 }
 
 .type-badge {
@@ -366,11 +363,11 @@ button:hover {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
+    font-size: 0.85rem; /* Slightly smaller stats */
 }
 
 .stat {
-    font-size: 0.9rem;
-    padding: 0.25rem;
+    padding: 0.2rem; /* Reduced padding */
     background-color: #3d3d3d;
     border-radius: 4px;
     text-align: center;
@@ -381,13 +378,22 @@ button:hover {
     font-weight: bold;
     background-color: #ff5c69;
     color: white;
+    margin-top: 0.5rem;
 }
 
-.pokemon-card.active {
-    border: 3px solid #4CAF50;
-    box-shadow: 0 0 15px rgba(76,175,80,0.5);
-    transform: scale(1.03);
+
+/* Battle Card States */
+.pokemon-card.hidden .card-inner {
+    transform: rotateY(180deg); /* Show pokeball */
 }
+.pokemon-card.revealed .card-inner {
+    transform: rotateY(0deg); /* Show details */
+}
+.pokemon-card.permanently-revealed .card-inner {
+    transform: rotateY(0deg) !important;
+    transition: none !important;
+}
+
 
 .winner-banner {
     background-color: #4CAF50;
@@ -399,7 +405,7 @@ button:hover {
     font-size: 1.5rem;
     font-weight: bold;
     position: sticky;
-    top: 0;
+    top: 0; /* Adjust if needed based on header */
     z-index: 100;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     animation: slideDown 0.5s ease-out;
@@ -436,4 +442,175 @@ button:hover {
 .player-score.leading {
     background-color: #214825;
     box-shadow: 0 0 10px rgba(76,175,80,0.3);
+}
+
+
+/* --- Manual Setup Page Specific Styles --- */
+
+/* Header for manual setup */
+.manual-setup-header {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    max-width: 800px; /* Or adjust as needed */
+    margin: 0 auto 2rem;
+}
+.manual-setup-header h2 {
+     text-align: center;
+     margin-bottom: 1.5rem;
+     color: #ff5c69;
+}
+
+/* Grid layout for manual setup */
+.manual-setup-grid {
+    max-width: 1200px; /* Allow grid to take full width */
+    margin: 2rem auto; /* Center the grid */
+}
+
+.manual-setup-grid .player-section {
+    background-color: #1e1e1e; /* Match other sections */
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.manual-setup-grid .score-display {
+    position: static; /* Score display not sticky here */
+    box-shadow: none;
+    margin-bottom: 1rem;
+    text-align: center; /* Center the score */
+}
+
+/* Manual Setup Card Faces */
+.manual-input-face {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: #3a3a3a;
+    transform: rotateY(0deg); /* Start showing input */
+}
+
+.manual-details-face {
+    border: 1px solid #444;
+    background-color: #2d2d2d;
+    transform: rotateY(180deg); /* Start hidden */
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+/* Flip control for manual cards */
+.pokemon-card.manual-input-mode .card-inner {
+    transform: rotateY(0deg);
+}
+.pokemon-card.manual-selected-mode .card-inner {
+     transform: rotateY(180deg);
+}
+
+/* Input field inside the card */
+.manual-input-face .pokemon-selector {
+    width: 90%;
+    position: relative; /* For dropdown positioning */
+    margin-bottom: 0.5rem;
+}
+
+.pokemon-input-in-card {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    text-align: center;
+}
+
+/* Autocomplete dropdown inside card */
+.manual-input-face .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 10;
+    display: none; /* JS controls visibility */
+}
+.manual-input-face .autocomplete-dropdown.active {
+    display: block;
+}
+.manual-input-face .autocomplete-item {
+    padding: 0.5rem 0.75rem; /* Slightly smaller padding */
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.manual-input-face .autocomplete-item:hover {
+    background-color: #3d3d3d;
+}
+
+
+/* Remove button inside card */
+.manual-input-face .remove-pokemon { /* Style the button shown on the input face */
+     display: none; /* Hide initially */
+}
+.manual-details-face .remove-pokemon { /* Position button on details face */
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 92, 105, 0.7);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    line-height: 22px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    z-index: 3; /* Ensure it's clickable */
+    transition: background-color 0.2s;
+    display: inline-block; /* Show when details are visible */
+}
+.manual-details-face .remove-pokemon:hover {
+    background-color: #ff5c69;
+}
+
+/* Team stats indicators */
+.team-stats {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background-color: #2d2d2d;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.team-complete {
+    color: #4CAF50;
+    border: 1px solid #4CAF50;
+}
+
+.team-incomplete {
+    color: #ffc107; /* Yellow for incomplete */
+     border: 1px solid #ffc107;
+}
+
+/* Winning/Losing/Tie indicators for manual setup */
+.manual-setup-grid .player-section.winning {
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), 0 2px 10px rgba(0, 0, 0, 0.4); /* Green glow + original shadow */
+    border: 2px solid #4CAF50;
+}
+
+.manual-setup-grid .player-section.losing {
+     opacity: 0.8; /* Slightly fade out losing section */
+     border: 2px solid transparent; /* Keep border spacing consistent */
+}
+
+.manual-setup-grid .player-section.tie {
+     border: 2px solid #ffc107; /* Yellow border for tie */
 }
