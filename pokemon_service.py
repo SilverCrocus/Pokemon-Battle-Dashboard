@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 class PokemonService:
     def __init__(self):
         self.base_url = "https://pokeapi.co/api/v2/"
-        # Increased limit to potentially cover more Pokemon, adjust if needed
-        self.total_pokemon_count = 1118 
+        # Changed from 1118 to 1025 to avoid 404 errors
+        self.total_pokemon_count = 1025 
         self.pokemon_name_list = self._fetch_all_pokemon_names() # Cache names on init
         logger.info(f"Initialized PokemonService with {len(self.pokemon_name_list)} names.")
 
