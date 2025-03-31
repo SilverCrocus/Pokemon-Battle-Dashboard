@@ -260,14 +260,19 @@ button:hover, .button:hover {
     /* Adjusted minmax for potentially smaller screens / more cards */
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
+    margin-bottom: 2rem;
 }
 
 /* Pokemon Card */
 .pokemon-card {
     height: 340px;
     perspective: 1000px;
-    margin-bottom: 1rem;
     background-color: transparent; /* Ensure card itself has no background */
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+    border: 1px solid #444; /* Ensure border is visible for card separation */
+    border-radius: 8px;
+    overflow: hidden; /* Keep contents within the border */
 }
 
 /* Removed .card-flip wrapper as it's redundant */
@@ -292,23 +297,19 @@ button:hover, .button:hover {
     flex-direction: column; /* Default flex direction */
 }
 
-/* Battle Card Front (Pokeball) */
+/* Battle Card Front (Simplified with clean design - no question mark) */
 .card-front {
-    background-color: #2d2d2d;
+    background: linear-gradient(145deg, #2d2d2d, #222222);
+    display: flex;
     align-items: center;
     justify-content: center;
     transform: rotateY(180deg); /* Hidden initially in battle */
+    border: 1px solid #444;
+    overflow: hidden;
 }
 
-.pokeball {
-    width: 80px;
-    height: 80px;
-}
-
-.pokeball img {
-    max-width: 100%;
-    max-height: 100%;
-}
+/* Remove the question mark pseudo-element */
+/* .card-front::after has been removed */
 
 /* Battle Card Back (Details) */
 .card-back {
@@ -317,6 +318,15 @@ button:hover, .button:hover {
     transform: rotateY(0deg); /* Visible initially in battle */
     justify-content: flex-start;
     align-items: stretch;
+}
+
+/* Hide any existing pokeball elements that might be in the HTML */
+.pokeball {
+    display: none !important; /* Completely hide the pokeball container */
+}
+
+.pokeball img {
+    display: none !important; /* Ensure the image is hidden */
 }
 
 .pokemon-image {
@@ -336,12 +346,18 @@ button:hover, .button:hover {
 .pokemon-info {
     padding: 1rem;
     flex-grow: 1; /* Allow info to take remaining space */
+    justify-content: space-between;
 }
 
 .pokemon-name {
     margin-bottom: 0.5rem;
     color: #e0e0e0;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-size: 0.95rem;
 }
 
 .pokemon-types {
@@ -364,6 +380,7 @@ button:hover, .button:hover {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
     font-size: 0.85rem; /* Slightly smaller stats */
+    margin-bottom: 0.5rem;
 }
 
 .stat {
@@ -371,6 +388,7 @@ button:hover, .button:hover {
     background-color: #3d3d3d;
     border-radius: 4px;
     text-align: center;
+    overflow: hidden;
 }
 
 .stat.total {
@@ -378,7 +396,7 @@ button:hover, .button:hover {
     font-weight: bold;
     background-color: #ff5c69;
     color: white;
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 
@@ -394,6 +412,10 @@ button:hover, .button:hover {
     transition: none !important;
 }
 
+/* Card face borders for better visual separation */
+.card-front, .card-back {
+    border: 1px solid #444;
+}
 
 .winner-banner {
     background-color: #4CAF50;
