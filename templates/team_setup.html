@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Setup</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Select Your Team</h1>
+        <p>Session ID: <span id="session-id"></span></p>
+        <form id="team-setup-form">
+            <h2>Your Team (<span id="selected-count">0</span>/6)</h2>
+            <div id="team-slots-container">
+                <div class="team-slot" data-slot-index="0">
+                    <input type="text" class="pokemon-slot-input" placeholder="Type Pokemon name..." data-slot-index="0">
+                    <div class="pokemon-card-display"></div>
+                    <div class="autocomplete-results-slot"></div>
+                </div>
+                <div class="team-slot" data-slot-index="1">
+                    <input type="text" class="pokemon-slot-input" placeholder="Type Pokemon name..." data-slot-index="1">
+                    <div class="pokemon-card-display"></div>
+                    <div class="autocomplete-results-slot"></div>
+                </div>
+                <div class="team-slot" data-slot-index="2">
+                    <input type="text" class="pokemon-slot-input" placeholder="Type Pokemon name..." data-slot-index="2">
+                    <div class="pokemon-card-display"></div>
+                    <div class="autocomplete-results-slot"></div>
+                </div>
+                <div class="team-slot" data-slot-index="3">
+                    <input type="text" class="pokemon-slot-input" placeholder="Type Pokemon name..." data-slot-index="3">
+                    <div class="pokemon-card-display"></div>
+                    <div class="autocomplete-results-slot"></div>
+                </div>
+                <div class="team-slot" data-slot-index="4">
+                    <input type="text" class="pokemon-slot-input" placeholder="Type Pokemon name..." data-slot-index="4">
+                    <div class="pokemon-card-display"></div>
+                    <div class="autocomplete-results-slot"></div>
+                </div>
+                <div class="team-slot" data-slot-index="5">
+                    <input type="text" class="pokemon-slot-input" placeholder="Type Pokemon name..." data-slot-index="5">
+                    <div class="pokemon-card-display"></div>
+                    <div class="autocomplete-results-slot"></div>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-team-button" disabled>Submit Team</button>
+        </form>
+    </div>
+    <!-- <script src="/socket.io/socket.io.js"></script> --> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script> 
+    <script src="{{ url_for('static', filename='js/team_setup.js') }}"></script>
+</body>
+</html>

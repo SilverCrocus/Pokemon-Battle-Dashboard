@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Battle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Pokemon Battle</h1>
+        <p>Session ID: <span id="session-id"></span></p>
+        <div id="battle-area">
+            <div id="opponent-pokemon">
+                <h2>Opponent's Pokemon</h2>
+                <div id="opponent-sprite"></div>
+                <div id="opponent-health">Health: <span id="opponent-hp"></span></div>
+            </div>
+            <div id="player-pokemon">
+                <h2>Your Pokemon</h2>
+                <div id="player-sprite"></div>
+                <div id="player-health">Health: <span id="player-hp"></span></div>
+                <div id="move-options">
+                    <!-- Move buttons will be added here by JavaScript -->
+                </div>
+            </div>
+        </div>
+        <div id="battle-log">
+            <h2>Battle Log</h2>
+            <ul id="log-entries">
+                <!-- Battle log entries will be added here by JavaScript -->
+            </ul>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/battle.js') }}"></script>
+</body>
+</html>

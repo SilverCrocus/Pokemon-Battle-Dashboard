@@ -1,0 +1,40 @@
+[
+    {
+        "name": "Charizard",
+        "level": 50,
+        "type": ["Fire", "Flying"],
+        "base_stats": {
+            "hp": 78,
+            "attack": 84,
+            "defense": 78,
+            "special_attack": 109,
+            "special_defense": 85,
+            "speed": 100
+        },
+        "moves": [
+            {"name": "Flamethrower", "type": "Fire", "power": 90, "accuracy": 100, "pp": 15, "damage_class": "special"},
+            {"name": "Air Slash", "type": "Flying", "power": 75, "accuracy": 95, "pp": 15, "damage_class": "special"},
+            {"name": "Focus Blast", "type": "Fighting", "power": 120, "accuracy": 70, "pp": 5, "damage_class": "special"},
+            {"name": "Solar Beam", "type": "Grass", "power": 120, "accuracy": 100, "pp": 10, "damage_class": "special"}
+        ]
+    },
+    {
+        "name": "Blastoise",
+        "level": 50,
+        "type": ["Water"],
+        "base_stats": {
+            "hp": 79,
+            "attack": 83,
+            "defense": 100,
+            "special_attack": 85,
+            "special_defense": 105,
+            "speed": 78
+        },
+        "moves": [
+            {"name": "Hydro Pump", "type": "Water", "power": 110, "accuracy": 80, "pp": 5, "damage_class": "special"},
+            {"name": "Ice Beam", "type": "Ice", "power": 90, "accuracy": 100, "pp": 10, "damage_class": "special"},
+            {"name": "Aura Sphere", "type": "Fighting", "power": 80, "accuracy": 100, "pp": 20, "damage_class": "special"},
+            {"name": "Rapid Spin", "type": "Normal", "power": 50, "accuracy": 100, "pp": 40, "damage_class": "physical"}
+        ]
+    }
+]

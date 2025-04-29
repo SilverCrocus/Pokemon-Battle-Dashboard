@@ -550,7 +550,7 @@ button:hover, .button:hover {
 /* Autocomplete dropdown inside card */
 .manual-input-face .autocomplete-dropdown {
     position: absolute;
-    top: 100%;
+    top: 100%; /* Position below the input */
     left: 0;
     width: 100%;
     max-height: 150px;
@@ -636,3 +636,229 @@ button:hover, .button:hover {
 .manual-setup-grid .player-section.tie {
      border: 2px solid #ffc107; /* Yellow border for tie */
 }
+
+/* --- Team Setup Page Specific Styles --- */
+
+#pokemon-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.pokemon-card {
+    background-color: #1e1e1e; /* Dark card background */
+    border: 2px solid transparent; /* Default border */
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.pokemon-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.pokemon-card img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 0.5rem;
+}
+
+.pokemon-card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    color: #e0e0e0;
+}
+
+.pokemon-types {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap; /* Allow types to wrap */
+}
+
+.pokemon-type {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: white;
+    text-transform: capitalize;
+}
+
+/* Type Colors (example colors, can be expanded) */
+.pokemon-type.normal { background-color: #A8A77A; }
+.pokemon-type.fire { background-color: #EE8130; }
+.pokemon-type.water { background-color: #6390F0; }
+.pokemon-type.electric { background-color: #F7D02C; }
+.pokemon-type.grass { background-color: #7AC74C; }
+.pokemon-type.ice { background-color: #96D9D6; }
+.pokemon-type.fighting { background-color: #C22E28; }
+.pokemon-type.poison { background-color: #A33EA1; }
+.pokemon-type.ground { background-color: #E2BF65; }
+.pokemon-type.flying { background-color: #A98FF3; }
+.pokemon-type.psychic { background-color: #F95587; }
+.pokemon-type.bug { background-color: #A6B91A; }
+.pokemon-type.rock { background-color: #B6A136; }
+.pokemon-type.ghost { background-color: #735797; }
+.pokemon-type.dragon { background-color: #6F35FC; }
+.pokemon-type.steel { background-color: #B7B7CE; }
+.pokemon-type.fairy { background-color: #D685AD; }
+.pokemon-type.dark { background-color: #705746; }
+
+/* Style for the submit button on the team setup page */
+#team-setup-form button[type="submit"] {
+    display: block;
+    width: 100%;
+    margin-top: 2rem;
+}
+
+/* --- Team Setup Slot Styles --- */
+
+#team-slots-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Adjust minmax for desired card size */
+    gap: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.team-slot {
+    position: relative; /* For positioning autocomplete */
+    background-color: #1e1e1e;
+    border: 2px dashed #444; /* Dashed border for empty slot */
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 220px; /* Ensure slots have a minimum height */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Center input initially */
+    transition: border-color 0.3s;
+}
+
+.team-slot.filled {
+    border-style: solid;
+    border-color: #555; /* Solid border when filled */
+    justify-content: flex-start; /* Align card content to top */
+}
+
+.pokemon-slot-input {
+    width: 90%;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem; /* Space below input */
+    border: 1px solid #555;
+    border-radius: 4px;
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.pokemon-card-display {
+    width: 100%;
+    display: flex; /* Use flex to easily center the card if needed */
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1; /* Allow card display to take space */
+}
+
+.pokemon-card-display .pokemon-card {
+    height: auto; /* Override fixed height */
+    width: 100%; /* Make card fill the display area */
+    margin-bottom: 0; /* Remove margin from card */
+    border: none; /* Remove card's own border */
+    box-shadow: none; /* Remove card's own shadow */
+    cursor: default; /* Not clickable */
+    position: relative; /* For remove button positioning */
+    padding-bottom: 25px; /* Space for remove button */
+}
+
+.pokemon-card-display .pokemon-card:hover {
+    transform: none; /* Disable hover effect */
+    box-shadow: none;
+}
+
+.pokemon-card-display .pokemon-card img {
+    width: 70px; /* Slightly smaller image */
+    height: 70px;
+}
+.pokemon-card-display .pokemon-card h3 {
+    font-size: 0.9rem;
+}
+.pokemon-card-display .pokemon-type {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+}
+
+.remove-pokemon-slot {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background-color: rgba(255, 92, 105, 0.7);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.remove-pokemon-slot:hover {
+    background-color: #ff5c69;
+}
+
+
+/* Autocomplete specific to slots */
+.autocomplete-results-slot {
+    position: absolute;
+    top: 100%; /* Position below the input */
+    left: 5%; /* Align with input */
+    width: 90%; /* Match input width */
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 100; /* Ensure it's above other elements */
+    display: none; /* Hidden by default */
+}
+
+.autocomplete-results-slot.active {
+    display: block;
+}
+
+.autocomplete-results-slot .autocomplete-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #e0e0e0;
+}
+
+.autocomplete-results-slot .autocomplete-item:hover {
+    background-color: #3d3d3d;
+}
+
+/* Adjust submit button margin */
+#team-setup-form button[type="submit"] {
+    margin-top: 1.5rem; /* Reduce top margin */
+}
+
+/* Remove previous styles for general pokemon-card selection if they conflict */
+#pokemon-selection { display: none; } /* Hide the old container */
+
+/* Responsive adjustments */

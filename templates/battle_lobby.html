@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Lobby</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Battle Lobby</h1>
+        <p>Share this link with your opponent:</p>
+        <p id="battle-link">{{ url_for('battle_lobby_page', session_id=session_id, _external=True) }}</p>
+
+        <button id="ready-button">Ready</button>
+        <p id="lobby-status">Waiting for opponent...</p>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/battle_lobby.js') }}"></script>
+</body>
+</html>
