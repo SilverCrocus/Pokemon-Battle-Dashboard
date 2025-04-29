@@ -98,14 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = inputElement.value.toLowerCase();
         resultsContainer.innerHTML = ''; // Clear previous results
 
-        if (searchTerm.length < 2) { // Start searching after 2 characters
+        if (searchTerm.length < 1) { // Start searching after 1 character
             resultsContainer.classList.remove('active');
             return;
         }
 
         const filteredNames = allPokemonNames.filter(name =>
             name.toLowerCase().startsWith(searchTerm)
-        ).slice(0, 5); // Limit results
+        ); // Show all results
 
         if (filteredNames.length > 0) {
             filteredNames.forEach(name => {
