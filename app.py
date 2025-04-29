@@ -328,6 +328,145 @@ def handle_submit_team(data):
         # Only one team submitted so far
         emit('team_submission_success', {'message': 'Team submitted. Waiting for opponent.'})
 
+@socketio.on('player_action')
+def handle_player_action(data):
+    """Socket.IO event to handle a player's action (move or switch) during battle."""
+    session_id = data.get('session_id')
+    action_type = data.get('action_type') # 'move' or 'switch'
+    details = data.get('details') # e.g., {'move_index': 1} or {'team_index': 2}
+
+    logger.info(f"Received action: {action_type} from {request.sid} for session {session_id} with details: {details}")
+
+    if not all([session_id, action_type, details]):
+        logger.warning(f"Invalid action data received: {data}")
+        emit('error_message', {'message': 'Invalid action data.'})
+        return
+
+    if session_id not in battle_sessions:
+        logger.warning(f"Action received for non-existent session: {session_id}")
+        emit('error_message', {'message': 'Battle session not found.'})
+        return
+
+    session_data = battle_sessions[session_id]
+    battle = session_data.get('battle')
+
+    if not battle:
+        logger.error(f"Battle object not found in session {session_id} when processing action.")
+        emit('error_message', {'message': 'Battle not started or internal error.'})
+        return
+
+    # Find player_id based on request.sid
+    player_id = None
+    for p_id, sid in session_data.get('players', {}).items():
+        if sid == request.sid:
+            player_id = p_id
+            break
+
+    if not player_id:
+        logger.warning(f"Client {request.sid} not found in players list for session {session_id} during action.")
+        emit('error_message', {'message': 'You are not part of this battle session.'})
+        return
+
+    # --- Select Action ---
+    action_successful = False
+    try:
+        if action_type == 'move':
+            move_index = details.get('move_index')
+            if move_index is not None:
+                logger.info(f"Player {player_id} selecting move index {move_index}")
+                action_successful = battle.select_move(player_id, move_index)
+            else:
+                logger.warning(f"Missing 'move_index' for move action by {player_id} in {session_id}")
+        elif action_type == 'switch':
+            team_index = details.get('team_index')
+            if team_index is not None:
+                logger.info(f"Player {player_id} selecting switch to team index {team_index}")
+                action_successful = battle.select_switch(player_id, team_index)
+            else:
+                logger.warning(f"Missing 'team_index' for switch action by {player_id} in {session_id}")
+        else:
+            logger.warning(f"Invalid action_type '{action_type}' received from {player_id} in {session_id}")
+
+    except Exception as e:
+        logger.error(f"Error processing action for {player_id} in {session_id}: {e}", exc_info=True)
+        emit('error_message', {'message': f'Error processing action: {e}'})
+        return # Stop processing if battle logic raised an exception
+
+    if not action_successful:
+        # select_move/select_switch returned False (e.g., already acted, invalid choice)
+        # The battle logic layer should ideally log the specific reason.
+        logger.warning(f"Action {action_type} by {player_id} in {session_id} was not successful (returned False).")
+        # Optionally send a more specific error if the battle logic provided one
+        emit('action_error', {'message': 'Invalid action or you have already acted.'}) # Keep it generic for now
+        return
+
+    logger.info(f"Action {action_type} by {player_id} successful for session {session_id}.")
+
+    # --- Emit Update After Selection ---
+    # Send state update immediately after *selection* so players get feedback
+    try:
+        player1_id = 'player1'
+        player2_id = 'player2'
+        player1_sid = session_data['players'].get(player1_id)
+        player2_sid = session_data['players'].get(player2_id)
+
+        player1_state = battle.get_state_for_player(player1_id)
+        player2_state = battle.get_state_for_player(player2_id)
+
+        if player1_sid:
+            emit('battle_update', player1_state, room=player1_sid)
+        if player2_sid:
+            emit('battle_update', player2_state, room=player2_sid)
+        logger.info(f"Post-action-selection state updates emitted for session {session_id}.")
+    except Exception as e:
+        logger.error(f"Error getting/emitting state after action selection in {session_id}: {e}", exc_info=True)
+
+
+    # --- Check if Turn is Ready & Execute ---
+    if battle.are_actions_selected():
+        logger.info(f"Both players have selected actions in session {session_id}. Running turn.")
+        try:
+            # TODO: run_turn ideally returns a log of events for this turn
+            turn_log = battle.run_turn() # Assuming run_turn executes the actions and updates state
+            logger.info(f"Turn executed for session {session_id}. Log: {turn_log}") # Log the turn events if returned
+
+            # --- Emit Post-Turn State Update ---
+            player1_id = 'player1'
+            player2_id = 'player2'
+            player1_sid = session_data['players'].get(player1_id)
+            player2_sid = session_data['players'].get(player2_id)
+
+            player1_state = battle.get_state_for_player(player1_id)
+            player2_state = battle.get_state_for_player(player2_id)
+
+            # Include turn log in the state update if available
+            # if turn_log:
+            #    player1_state['turn_log'] = turn_log
+            #    player2_state['turn_log'] = turn_log
+
+            if player1_sid:
+                emit('battle_update', player1_state, room=player1_sid)
+            if player2_sid:
+                emit('battle_update', player2_state, room=player2_sid)
+            logger.info(f"Post-turn state updates emitted for session {session_id}.")
+
+            # --- Check Game Over ---
+            game_over_status = battle.check_game_over()
+            if game_over_status:
+                winner = game_over_status['winner']
+                loser = game_over_status['loser']
+                logger.info(f"Game over in session {session_id}. Winner: {winner}, Loser: {loser}")
+                emit('game_over', {'winner': winner, 'loser': loser}, room=session_id)
+                # Optional: Clean up the battle session
+                # del battle_sessions[session_id]
+
+        except Exception as e:
+            logger.error(f"Error running turn or post-turn processing for session {session_id}: {e}", exc_info=True)
+            emit('error_message', {'message': f'Error executing turn: {e}'}, room=session_id) # Notify both players
+    else:
+        logger.info(f"Waiting for opponent action in session {session_id}.")
+
+
 if __name__ == '__main__':
     # Consider adding host='0.0.0.0' if running in a container or need external access
     socketio.run(app, debug=True, use_reloader=False)

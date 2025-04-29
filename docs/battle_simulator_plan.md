@@ -1,77 +1,43 @@
-# Pokemon Battle Simulator Plan
+# Pokemon Battle Logic Enhancement Plan
 
-## Requirement Clarification
+1.  **[DONE] Chunk 1: Basic Types & Class Updates**
+    *   Add `TYPE_CHART` and [get_type_effectiveness](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:30:0-39:24) function.
+    *   Update `Pokemon.__init__` to handle `type_list`.
+    *   Add `Pokemon.get_opponent_view` method.
+    *   Update [Move](cci:2://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:104:0-125:24) class to accept a data dictionary and add [use_pp](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:117:4-124:20) method.
 
-*   **Core Functionality:** Add a 1v1 real-time battle simulator page to the existing web application.
-*   **Immediate Use Cases:** Two online players can form 6-Pokemon teams and battle each other.
-*   **Essential Constraints:** Initially use common movesets for simplicity; future customization is a possibility.
-*   **Interaction Model:** Real-time, simultaneous online battle where both players take turns selecting moves.
-*   **Integration:** The battle simulator will be a new page within the existing web application.
-*   **Team Formation Link:** A unique link will be generated for players to set up their teams for a specific battle session.
-*   **Move Selection:** Initially, use common movesets.
+2.  **[DONE (needs fix)] Chunk 2: Player Actions Setup**
+    *   Initialize `self.player_actions` in `Battle.__init__`.
+    *   Update `Battle.select_move` to store actions in `self.player_actions`.
+    *   Rename `are_moves_selected` to [are_actions_selected](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:17:4-27:62) and update its logic.
+    *   **Fix:** Update the call in [run_turn](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:210:4-263:71) to use [are_actions_selected](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:17:4-27:62).
 
-## Core Solution Design
+3.  **Chunk 3: Switch Implementation**
+    *   Create `Battle.select_switch` method to handle switching Pokemon.
+    *   Update `player_actions` to accommodate switch actions.
+    *   Update [are_actions_selected](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:17:4-27:62) (if needed) to correctly handle both moves and switches.
+    *   Implement logic within [run_turn](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:210:4-263:71) (or a helper) to perform the switch action.
 
-Implement a real-time battle experience integrated into the existing web application using WebSockets for communication.
+4.  **Chunk 4: Turn Execution Logic**
+    *   Refine `Battle.run_turn`.
+    *   Determine turn order based on Pokemon speed (and potentially action priority later).
+    *   Implement `Battle._execute_action` (or similar) to handle performing moves or switches.
+    *   Implement `Battle._calculate_damage` using [get_type_effectiveness](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:30:0-39:24), stats, and move power.
+    *   Update Pokemon HP using [take_damage](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:93:4-99:87).
+    *   Decrement move PP using `move.use_pp()`.
+    *   Reset `player_actions` at the end of the turn.
 
-## Implementation Details
+5.  **Chunk 5: Battle State & Game Over**
+    *   Implement `Battle.get_state_for_player` to provide comprehensive state updates (active Pokemon, team status, opponent view, log).
+    *   Implement `Battle.check_game_over` to determine if a player has no usable Pokemon left.
+    *   Update [run_turn](cci:1://file:///e:/Documents/Pokemon_battle_mel/battle_logic.py:210:4-263:71) to check for game over conditions.
 
-1.  **Frontend (New Files):**
-    *   `templates/team_setup.html`: Page for players to select their 6 Pokemon team.
-    *   `static/js/team_setup.js`: JavaScript for the team setup page, handling Pokemon selection and sending the team to the backend.
-    *   `templates/battle.html`: Page to display the battle, including Pokemon sprites, health bars, move options, and battle log.
-    *   `static/js/battle.js`: JavaScript for the battle page, handling move selection, receiving battle updates via WebSockets, and updating the UI.
-    *   Potentially new CSS in `static/css/style.css` or a new file for battle-specific styling.
+6.  **Chunk 6: SocketIO Integration (`app.py`)**
+    *   Update `handle_player_action` in `app.py` to call `battle.select_move` or `battle.select_switch`.
+    *   Trigger `battle.run_turn` when both players have selected actions.
+    *   Emit updated battle states (`battle.get_state_for_player`) to clients after each action and turn resolution.
+    *   Handle game over events.
 
-2.  **Backend (`app.py` and potentially new files):**
-    *   Add routes for `/team_setup` and `/battle`.
-    *   Implement logic to handle team submissions from `team_setup.js`, storing teams temporarily with a unique battle session ID.
-    *   Integrate a WebSocket library (e.g., `Flask-SocketIO`).
-    *   Implement WebSocket event handlers for connecting players, receiving moves, and sending battle state updates.
-    *   Develop the battle simulation logic (in `app.py` or `battle_logic.py`).
-    *   Implement logic to determine common movesets (e.g., from a local file).
-
-3.  **Team Formation Link:**
-    *   Generate a unique battle session ID and a link (`/team_setup?session_id=XYZ`) when a battle is initiated.
-    *   Frontend (`team_setup.js`) reads `session_id` from the URL and includes it in team submission.
-    *   `/battle` route requires `session_id` to connect players.
-
-4.  **Move Selection (Common Movesets):**
-    *   Backend determines the common moveset for the active Pokemon.
-    *   Moveset is sent to the frontend (`battle.js`) for display and selection.
-
-## Key Design Decisions
-
-*   **Real-time Communication:** WebSockets.
-*   **Battle State Management:** Backend is the single source of truth.
-*   **Battle Session Management:** Unique session IDs.
-*   **Data for Movesets:** Local file for common movesets initially.
-
-## Battle Flow Diagram
-
-```mermaid
-graph TD
-    A[User 1 Initiates Battle] --> B{Backend: Create Session ID}
-    B --> C[Backend: Generate Team Setup Link (session_id)]
-    C --> D[User 1 Shares Link with User 2]
-    D --> E[User 1 & 2 Visit Team Setup Link]
-    E --> F[Frontend: Team Setup Page]
-    F --> G{User Selects 6 Pokemon}
-    G --> H[Frontend: Submit Team (with session_id)]
-    H --> I[Backend: Store Team (with session_id)]
-    I --> J{Both Teams Submitted?}
-    J -- No --> K[Frontend: Waiting for Opponent]
-    J -- Yes --> L[Backend: Start Battle Session]
-    L --> M[Frontend: Redirect to Battle Page (session_id)]
-    M --> N[Frontend: Display Initial Battle State]
-    N --> O{Player 1 Selects Move}
-    N --> P{Player 2 Selects Move}
-    O --> Q[Frontend: Send Move (with session_id)]
-    P --> Q
-    Q --> R[Backend: Receive Moves]
-    R --> S[Backend: Simulate Turn]
-    S --> T[Backend: Send Battle State Update (via WebSocket)]
-    T --> U[Frontend: Update Battle Display]
-    U --> V{Battle Over?}
-    V -- No --> N
-    V -- Yes --> W[Frontend: Display Battle Results]
+7.  **Chunk 7: PokeAPI Integration (Future)**
+    *   Replace static `POKEMON_DATA` loading with dynamic fetching from PokeAPI during `Battle._create_pokemon`.
+    *   Fetch move details dynamically as needed.
