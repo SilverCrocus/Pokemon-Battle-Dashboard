@@ -515,54 +515,54 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdownHeight = dropdown.clientHeight;
         const scrollMax = dropdown.scrollHeight - dropdownHeight;
         
-        // Skip complex calculations and use a more direct approach
-        // Use the native scrollIntoView with different behaviors based on item position
+        // Direct scroll position manipulation approach - no scrollIntoView calls 
+        // to prevent unwanted page scrolling
         
-        // For first/last items, handle specially to ensure they're at the edge with good visibility
+        // Calculate the bottom position of the item
+        const itemBottom = itemTop + itemHeight;
+        
+        // Handle different cases based on item position
         if (nextIndex === 0) {
-            // First item - manually set scroll position instead of using scrollIntoView
-            // This prevents the page from scrolling when looping back to the top
+            // First item - scroll to the very top
             dropdown.scrollTop = 0;
-        } 
-        else if (nextIndex === items.length - 1 || nextIndex >= items.length - 3) {
-            // Last few items - align to the bottom with extra padding to ensure full visibility
-            nextActive.scrollIntoView({
-                block: 'end', 
-                inline: 'nearest'
-            });
-            // Add extra padding at the bottom to ensure the item is fully visible
-            if (dropdown.scrollTop < scrollMax) {
-                dropdown.scrollTop += 5; // Add a bit more scroll to ensure full visibility
+        } else if (nextIndex === items.length - 1) { // Special handling for the VERY LAST item
+            const desiredBottomPadding = 40;
+            const newScrollTopTarget = itemBottom - dropdownHeight + desiredBottomPadding;
+            
+            // If the target scroll (newScrollTopTarget) would be scrollMax or more, apply fudge factor
+            if (newScrollTopTarget >= scrollMax) { 
+                const fudgeFactor = 10; // Pixels to scroll less than scrollMax to reveal bottom
+                dropdown.scrollTop = Math.max(0, scrollMax - fudgeFactor);
+                // Sanity check: ensure this adjustment doesn't hide the item's top
+                if (dropdown.scrollTop > itemTop) {
+                    dropdown.scrollTop = itemTop; // Fallback: show item's top
+                }
+            } else {
+                // Standard calculation, won't hit scrollMax or already has enough room
+                dropdown.scrollTop = Math.max(0, newScrollTopTarget);
             }
-        }
-        else {
-            // Middle items - center them for best visibility
-            nextActive.scrollIntoView({
-                block: 'center',
-                inline: 'nearest'
-            });
+        } else if (nextIndex >= items.length - 5) { // For other items near the bottom (but not the very last)
+            const desiredBottomPadding = 40; // Consistent padding
+            const newScrollTop = itemBottom - dropdownHeight + desiredBottomPadding;
+            
+            // Ensure we don't scroll beyond limits
+            dropdown.scrollTop = Math.max(0, Math.min(newScrollTop, scrollMax));
+        } else {
+            // Middle items - check if they're in view
+            const currentScrollTop = dropdown.scrollTop;
+            const currentScrollBottom = currentScrollTop + dropdownHeight;
+            
+            // If item is not fully visible (either at top or bottom of viewport)
+            if (itemTop < currentScrollTop || itemBottom > currentScrollBottom) {
+                // Center the item in the viewport
+                dropdown.scrollTop = Math.max(0, Math.min(
+                    itemTop - (dropdownHeight / 2) + (itemHeight / 2),
+                    scrollMax
+                ));
+            }
         }
         
-        // Safety check with additional padding for bottom items
-        // Run after a very short delay to ensure the UI has updated
-        setTimeout(() => {
-            const itemRect = nextActive.getBoundingClientRect();
-            const dropdownRect = dropdown.getBoundingClientRect();
-            
-            // Check if the item is at the bottom and potentially cut off
-            const isNearBottom = nextIndex >= items.length - 4;
-            const bottomOverlap = itemRect.bottom > dropdownRect.bottom;
-            
-            if (isNearBottom && bottomOverlap) {
-                // Force more aggressive scrolling for bottom items
-                nextActive.scrollIntoView({
-                    block: 'end',
-                    inline: 'nearest'
-                });
-                // Add additional padding
-                dropdown.scrollTop = dropdown.scrollTop + 20;
-            }
-        }, 10);
+
     }
 
     // This function is no longer used - we're using scrollIntoView directly in navigateDropdownItems
