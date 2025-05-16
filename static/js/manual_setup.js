@@ -512,61 +512,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get key measurements
         const itemTop = nextActive.offsetTop;
         const itemHeight = nextActive.offsetHeight;
+        const itemBottom = itemTop + itemHeight; // Calculate the bottom position of the item
         const dropdownHeight = dropdown.clientHeight;
         const scrollMax = dropdown.scrollHeight - dropdownHeight;
         
-        // Direct scroll position manipulation approach - no scrollIntoView calls 
-        // to prevent unwanted page scrolling
+        // Simplified approach for more reliable scrolling behavior
         
-        // Calculate the bottom position of the item
-        const itemBottom = itemTop + itemHeight;
-        
-        // Handle different cases based on item position
-        if (nextIndex === 0) {
-            // First item - scroll to the very top
+        // Case 1: Item is at the very top (first few items)
+        if (nextIndex <= 1) {
+            // For the first items, scroll to the very top
             dropdown.scrollTop = 0;
-        } else if (nextIndex === items.length - 1) { // Special handling for the VERY LAST item
-            const desiredBottomPadding = 40;
-            const newScrollTopTarget = itemBottom - dropdownHeight + desiredBottomPadding;
-            
-            // If the target scroll (newScrollTopTarget) would be scrollMax or more, apply fudge factor
-            if (newScrollTopTarget >= scrollMax) { 
-                const fudgeFactor = 10; // Pixels to scroll less than scrollMax to reveal bottom
-                dropdown.scrollTop = Math.max(0, scrollMax - fudgeFactor);
-                // Sanity check: ensure this adjustment doesn't hide the item's top
-                if (dropdown.scrollTop > itemTop) {
-                    dropdown.scrollTop = itemTop; // Fallback: show item's top
-                }
-            } else {
-                // Standard calculation, won't hit scrollMax or already has enough room
-                dropdown.scrollTop = Math.max(0, newScrollTopTarget);
-            }
-        } else if (nextIndex >= items.length - 5) { // For other items near the bottom (but not the very last)
-            const desiredBottomPadding = 40; // Consistent padding
-            const newScrollTop = itemBottom - dropdownHeight + desiredBottomPadding;
-            
-            // Ensure we don't scroll beyond limits
-            dropdown.scrollTop = Math.max(0, Math.min(newScrollTop, scrollMax));
-        } else {
-            // Middle items - check if they're in view
-            const currentScrollTop = dropdown.scrollTop;
-            const currentScrollBottom = currentScrollTop + dropdownHeight;
-            
-            // If item is not fully visible (either at top or bottom of viewport)
-            if (itemTop < currentScrollTop || itemBottom > currentScrollBottom) {
-                // Center the item in the viewport
-                dropdown.scrollTop = Math.max(0, Math.min(
-                    itemTop - (dropdownHeight / 2) + (itemHeight / 2),
-                    scrollMax
-                ));
-            }
+        } 
+        // Case 2: Item is the very last item in the list
+        else if (nextIndex === items.length - 1) { 
+            // Guaranteed method for last item: scroll to bottom plus extra padding to ensure visibility
+            // Slight adjustment from absolute bottom to provide better visibility
+            dropdown.scrollTop = dropdown.scrollHeight - dropdown.clientHeight + 5;
         }
-        
-
+        // Case 3: Item is near the bottom (but not the last)
+        else if (nextIndex >= items.length - 3) { 
+            // For items near the bottom, use more space
+            dropdown.scrollTop = Math.max(0, itemTop - 40); // Show more above the item
+        } 
+        // Case 3: Item is not fully visible
+        else if (itemTop < dropdown.scrollTop || itemBottom > (dropdown.scrollTop + dropdownHeight)) {
+            // Center approach for middle items
+            const targetScrollTop = itemTop - ((dropdownHeight - itemHeight) / 2);
+            dropdown.scrollTop = Math.max(0, Math.min(targetScrollTop, scrollMax));
+        }
+        // Otherwise: Item is already fully visible, don't change scroll position
     }
 
-    // This function is no longer used - we're using scrollIntoView directly in navigateDropdownItems
-
+    // Attach event listeners to all Pokemon card inputs
     allPokemonCardInputs.forEach(input => {
         input.addEventListener('input', handleAutocompleteInput);
         input.addEventListener('keydown', handleInputKeyDown);
