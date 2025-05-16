@@ -290,11 +290,13 @@ button:hover, .button:hover {
     position: absolute;
     width: 100%;
     height: 100%;
+    -webkit-backface-visibility: hidden; /* Safari */
     backface-visibility: hidden;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column; /* Default flex direction */
+    transform-style: preserve-3d; /* Ensure 3D space for children */
 }
 
 /* Battle Card Front (Simplified with clean design - no question mark) */
@@ -511,6 +513,8 @@ button:hover, .button:hover {
     padding: 1rem;
     background-color: #3a3a3a;
     transform: rotateY(0deg); /* Start showing input */
+    backface-visibility: hidden; /* Hide the backface during flip */
+    z-index: 2; /* Ensure input face is above details face when visible */
 }
 
 .manual-details-face {
@@ -519,6 +523,7 @@ button:hover, .button:hover {
     transform: rotateY(180deg); /* Start hidden */
     justify-content: flex-start;
     align-items: stretch;
+    backface-visibility: hidden; /* Hide the backface during flip */
 }
 
 /* Flip control for manual cards */
@@ -526,14 +531,28 @@ button:hover, .button:hover {
     transform: rotateY(0deg);
 }
 .pokemon-card.manual-selected-mode .card-inner {
-     transform: rotateY(180deg);
+    transform: rotateY(180deg);
+}
+
+/* Ensure the remove button is only visible on the front side of the card */
+.pokemon-card.manual-input-mode .manual-details-face .remove-pokemon,
+.pokemon-card.manual-selected-mode .manual-input-face .remove-pokemon,
+.manual-input-face .remove-pokemon {  /* Hide on input face */
+    display: none !important;
+}
+
+/* Show remove button only on the details face when in selected mode */
+.pokemon-card.manual-selected-mode .manual-details-face .remove-pokemon {
+    display: flex !important;
+    opacity: 0.9;
 }
 
 /* Input field inside the card */
 .manual-input-face .pokemon-selector {
-    width: 90%;
+    width: 100%;
     position: relative; /* For dropdown positioning */
     margin-bottom: 0.5rem;
+    z-index: 10; /* Ensure dropdown appears above other elements */
 }
 
 .pokemon-input-in-card {
@@ -552,54 +571,108 @@ button:hover, .button:hover {
     position: absolute;
     top: 100%;
     left: 0;
-    width: 100%;
-    max-height: 150px;
+    right: 0;
+    max-height: 200px;
     overflow-y: auto;
     background-color: #2d2d2d;
-    border: 1px solid #444;
+    border: 1px solid #555;
     border-top: none;
     border-radius: 0 0 4px 4px;
-    z-index: 10;
-    display: none; /* JS controls visibility */
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    margin-top: -1px; /* Align with input border */
+    scrollbar-width: thin;
+    scrollbar-color: #555 #2d2d2d;
 }
+
+/* Custom scrollbar for WebKit browsers */
+.manual-input-face .autocomplete-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.manual-input-face .autocomplete-dropdown::-webkit-scrollbar-track {
+    background: #2d2d2d;
+    border-radius: 0 4px 4px 0;
+}
+
+.manual-input-face .autocomplete-dropdown::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+}
+
 .manual-input-face .autocomplete-dropdown.active {
     display: block;
 }
+
 .manual-input-face .autocomplete-item {
-    padding: 0.5rem 0.75rem; /* Slightly smaller padding */
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    color: #e0e0e0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    border-left: 3px solid transparent;
 }
+
 .manual-input-face .autocomplete-item:hover {
     background-color: #3d3d3d;
+    border-left-color: #ff5c69;
+    padding-left: 1.25rem;
+}
+
+.manual-input-face .autocomplete-item:not(:last-child) {
+    border-bottom: 1px solid #444;
 }
 
 
 /* Remove button inside card */
-.manual-input-face .remove-pokemon { /* Style the button shown on the input face */
-     display: none; /* Hide initially */
-}
-.manual-details-face .remove-pokemon { /* Position button on details face */
+.remove-pokemon {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    background-color: rgba(255, 92, 105, 0.7);
-    border: none;
+    top: 10px;
+    right: 10px;
+    background: #ff4444;
+    border: 2px solid white;
     color: white;
     border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    line-height: 22px;
+    width: 28px;
+    height: 28px;
+    line-height: 24px;
     text-align: center;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 20px;
     font-weight: bold;
-    z-index: 3; /* Ensure it's clickable */
-    transition: background-color 0.2s;
-    display: inline-block; /* Show when details are visible */
+    z-index: 1000; /* Very high z-index to ensure it's above everything */
+    transition: all 0.2s ease;
+    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    pointer-events: auto; /* Ensure it's clickable */
 }
-.manual-details-face .remove-pokemon:hover {
-    background-color: #ff5c69;
+
+.remove-pokemon:hover {
+    background: #ff0000;
+    transform: scale(1.15);
+    opacity: 1;
+}
+
+/* Make sure the button is visible on both card faces */
+.manual-input-face .remove-pokemon,
+.manual-details-face .remove-pokemon {
+    opacity: 0.9;
+    display: block; /* Show when parent face is active */
+}
+
+/* Ensure the button is clickable even when card is flipped */
+.card-inner {
+    position: relative;
 }
 
 /* Team stats indicators */

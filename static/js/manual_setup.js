@@ -91,16 +91,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleAutocompleteInput(event) {
         const inputElement = event.target; // Should be .pokemon-input-in-card
-        const value = inputElement.value.toLowerCase();
-        if (value.length < 1) { // Suggest even from 1 character
+        const value = inputElement.value.trim().toLowerCase();
+        
+        // Always show suggestions when there's input, even if it's just one character
+        if (value.length < 1) {
             hideAutocomplete();
             return;
         }
-        const suggestions = allPokemonNames.filter(name => name.toLowerCase().startsWith(value));
-        showAutocomplete(inputElement, suggestions);
+        
+        // Filter names that start with the input value
+        const suggestions = allPokemonNames.filter(name => 
+            name.toLowerCase().startsWith(value)
+        );
+        
+        // Also include names that contain the input value but don't start with it
+        const moreSuggestions = allPokemonNames.filter(name => 
+            name.toLowerCase().includes(value) && 
+            !suggestions.includes(name)
+        );
+        
+        const allSuggestions = [...suggestions, ...moreSuggestions].slice(0, 10);
+        showAutocomplete(inputElement, allSuggestions);
     }
 
     // --- Manual Selection Handling ---
+
+    // Function to show the remove button with a smooth fade-in
+    function showRemoveButton(button) {
+        if (!button) return;
+        button.style.display = 'inline-block';
+        button.style.opacity = '0';
+        // Trigger reflow to ensure the initial state is applied
+        void button.offsetWidth;
+        // Fade in
+        button.style.transition = 'opacity 0.2s ease';
+        button.style.opacity = '0.9';
+        // Make sure the button is above the card content
+        button.style.zIndex = '100';
+    }
 
     // Update a Pokemon card with real data (copied from script.js and adapted)
     function updatePokemonCardDisplay(cardElement, pokemon) {
@@ -134,6 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
         detailsFace.querySelector('.stat.special-defense').textContent = `SpD: ${pokemon.stats['special-defense']}`;
         detailsFace.querySelector('.stat.speed').textContent = `Spd: ${pokemon.stats.speed}`;
         detailsFace.querySelector('.stat.total').textContent = `Total: ${pokemon.total_stats}`;
+        
+        // The remove button is now always visible in the HTML, no need to show/hide it here
     }
 
 
@@ -169,11 +199,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Update the card display
                 updatePokemonCardDisplay(cardElement, pokemonData);
+                
+                // Trigger the flip to show the details face with the remove button
                 cardElement.classList.remove('manual-input-mode');
                 cardElement.classList.add('manual-selected-mode');
-                // Show remove button
-                const removeBtn = cardElement.querySelector('.remove-pokemon');
-                if(removeBtn) removeBtn.style.display = 'inline-block';
             }
             updateTeamStats(player); // Update overall team score display
             updateWinningIndicator(); // Check winner after selection
@@ -192,18 +221,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Clear data and reset card to input mode
     function clearPokemonSlot(player, index, cardElement) {
-         if (player === 1) pokemonList1[index] = null;
-         else pokemonList2[index] = null;
+        if (player === 1) pokemonList1[index] = null;
+        else pokemonList2[index] = null;
 
-         cardElement.classList.remove('manual-selected-mode');
-         cardElement.classList.add('manual-input-mode');
+        // Flip the card back to input mode
+        cardElement.classList.remove('manual-selected-mode');
+        cardElement.classList.add('manual-input-mode');
 
-         const input = cardElement.querySelector('.pokemon-input-in-card');
-         if (input) input.value = '';
+        // Clear the input and details
+        const input = cardElement.querySelector('.pokemon-input-in-card');
+        if (input) input.value = '';
 
-         const removeBtn = cardElement.querySelector('.remove-pokemon');
-         if(removeBtn) removeBtn.style.display = 'none';
+        // Clear the details face
+        const detailsFace = cardElement.querySelector('.manual-details-face');
+        if (detailsFace) {
+            const img = detailsFace.querySelector('.pokemon-image img');
+            if (img) img.src = '';
+            const nameEl = detailsFace.querySelector('.pokemon-name');
+            if (nameEl) nameEl.textContent = '';
+            const typesEl = detailsFace.querySelector('.pokemon-types');
+            if (typesEl) typesEl.innerHTML = '';
+            // Clear stats
+            detailsFace.querySelectorAll('.stat').forEach(stat => stat.textContent = '');
+        }
     }
+
 
     // Update the total stats display for a player
     function updateTeamStats(player) {
@@ -356,18 +398,33 @@ document.addEventListener('DOMContentLoaded', function() {
         input.disabled = true;
     });
 
-    // Add listeners to remove buttons (needs to be delegated or added after creation)
-    // Since buttons are added/removed dynamically, delegate from a static parent
-    document.querySelector('.container').addEventListener('click', function(event) {
-        if (event.target.classList.contains('remove-pokemon')) {
+    // Handle all click events on the document
+    document.addEventListener('click', function(event) {
+        // Handle remove button clicks
+        const removeBtn = event.target.closest('.remove-pokemon');
+        if (removeBtn) {
+            event.preventDefault();
+            event.stopPropagation();
             handleRemovePokemon(event);
+            return;
+        }
+        
+        // Handle clicks on autocomplete items
+        const autocompleteItem = event.target.closest('.autocomplete-item');
+        if (autocompleteItem) {
+            event.stopPropagation();
+            return;
+        }
+        
+        // Hide autocomplete when clicking outside a selector
+        if (!event.target.closest('.pokemon-selector')) {
+            hideAutocomplete();
         }
     });
-
-
-    document.addEventListener('click', (event) => {
-        // Hide autocomplete if clicking outside a selector
-        if (!event.target.closest('.pokemon-selector')) {
+    
+    // Handle keyboard navigation for autocomplete
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
             hideAutocomplete();
         }
     });

@@ -13,12 +13,10 @@
             <h1>Manual Team Builder</h1>
         </header>
 
-        <!-- Removed setup-form class from main wrapper -->
         <div> 
             <div class="manual-setup-header" style="background-color: #1e1e1e; border-radius: 8px; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); max-width: 800px; margin: 0 auto 2rem;">
                 <h2 style="text-align: center; margin-bottom: 1.5rem; color: #ff5c69;">Build Your Teams</h2>
-                <!-- Player Name Inputs Removed -->
-            </div> <!-- Close manual-setup-header -->
+            </div>
 
             <!-- Battle Grid Layout for Manual Setup -->
             <div class="battle-grid manual-setup-grid">
@@ -37,10 +35,10 @@
                                         <input type="text" class="pokemon-input-in-card" data-player="1" data-index="{{ i }}" placeholder="Type Pokémon {{ i+1 }}...">
                                         <div class="autocomplete-dropdown"></div>
                                     </div>
-                                    <button class="remove-pokemon" style="display: none;" data-player="1" data-index="{{ i }}">&times;</button>
                                 </div>
                                 <!-- Details Face (Hidden Initially) -->
                                 <div class="card-back manual-details-face">
+                                    <button class="remove-pokemon" data-player="1" data-index="{{ i }}" title="Remove Pokemon">&times;</button>
                                     <div class="pokemon-image"><img src="" alt=""></div>
                                     <div class="pokemon-info">
                                         <h3 class="pokemon-name"></h3>
@@ -76,10 +74,10 @@
                                         <input type="text" class="pokemon-input-in-card" data-player="2" data-index="{{ i }}" placeholder="Type Pokémon {{ i+1 }}...">
                                         <div class="autocomplete-dropdown"></div>
                                     </div>
-                                     <button class="remove-pokemon" style="display: none;" data-player="2" data-index="{{ i }}">&times;</button>
                                 </div>
                                 <!-- Details Face (Hidden Initially) -->
                                 <div class="card-back manual-details-face">
+                                    <button class="remove-pokemon" data-player="2" data-index="{{ i }}" title="Remove Pokemon">&times;</button>
                                     <div class="pokemon-image"><img src="" alt=""></div>
                                     <div class="pokemon-info">
                                         <h3 class="pokemon-name"></h3>
@@ -98,11 +96,11 @@
                 </div>
             </div>
 
-             <div style="text-align: center; margin-top: 2rem;">
+            <div style="text-align: center; margin-top: 2rem;">
                 <button id="start-manual-battle-btn" class="button">Start Battle with These Teams</button>
-                 <a href="/" style="display: block; margin-top: 1rem; color: #aaa;">Cancel and Go Back</a>
+                <a href="/" style="display: block; margin-top: 1rem; color: #aaa;">Cancel and Go Back</a>
             </div>
-        <!-- Removed closing div for manual-setup-header as it was closed earlier -->
+        </div>
     </div>
 
     <!-- Link to the JS file -->

@@ -1,42 +1,99 @@
 import random
 import requests
+import urllib3
 from typing import Dict, List, Tuple, Any, Optional
 import logging
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# Disable SSL warnings for development
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def create_session():
+    """Create a requests session with retry strategy."""
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET", "POST"]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
 class PokemonService:
     def __init__(self):
         self.base_url = "https://pokeapi.co/api/v2/"
-        # Changed from 1118 to 1025 to avoid 404 errors
-        self.total_pokemon_count = 1025 
-        self.pokemon_name_list = self._fetch_all_pokemon_names() # Cache names on init
+        self.total_pokemon_count = 1025  # Latest stable generation count
+        self.session = create_session()
+        self.pokemon_name_list = self._fetch_all_pokemon_names()  # Cache names on init
         logger.info(f"Initialized PokemonService with {len(self.pokemon_name_list)} names.")
+        
+        # If we couldn't fetch the list, load a fallback list
+        if not self.pokemon_name_list:
+            logger.warning("Using fallback Pokemon name list")
+            self.pokemon_name_list = self._get_fallback_pokemon_list()
+            logger.info(f"Initialized with fallback list of {len(self.pokemon_name_list)} Pokemon names.")
 
     def _fetch_all_pokemon_names(self) -> List[str]:
-        """Fetch a list of all Pokemon names from PokeAPI."""
-        all_names = []
-        url = f"{self.base_url}pokemon?limit=10000" # Fetch a large batch initially
+        """Fetch a list of all Pokemon names from PokeAPI with retries and fallback."""
+        url = f"{self.base_url}pokemon?limit=10000"
+        
+        # First try with verify=True (recommended for production)
         try:
-            response = requests.get(url)
+            response = self.session.get(url, verify=True, timeout=10)
             response.raise_for_status()
+            return self._process_pokemon_list_response(response)
+        except (requests.RequestException, ValueError) as e:
+            logger.warning(f"First attempt failed with SSL verification: {e}")
+            
+        # If that fails, try without SSL verification (for development)
+        try:
+            response = self.session.get(url, verify=False, timeout=10)
+            response.raise_for_status()
+            return self._process_pokemon_list_response(response)
+        except Exception as e:
+            logger.error(f"Failed to fetch Pokemon list after retries: {e}")
+            return []
+    
+    def _process_pokemon_list_response(self, response) -> List[str]:
+        """Process the response from the Pokemon list endpoint."""
+        try:
             data = response.json()
             results = data.get('results', [])
-            all_names.extend([p['name'] for p in results])
+            all_names = [p['name'] for p in results]
             
-            # PokeAPI might paginate even with a large limit, though unlikely for just names
-            # If needed, add pagination logic here based on data['next']
-
+            # Handle pagination if needed
+            next_url = data.get('next')
+            while next_url:
+                response = self.session.get(next_url, verify=False, timeout=10)
+                response.raise_for_status()
+                page_data = response.json()
+                all_names.extend([p['name'] for p in page_data.get('results', [])])
+                next_url = page_data.get('next')
+            
             logger.info(f"Fetched {len(all_names)} Pokemon names.")
             return sorted(all_names)
-        except requests.RequestException as e:
-            logger.error(f"Error fetching Pokemon list: {e}")
-            return [] # Return empty list on error
-        except Exception as e:
-            logger.error(f"An unexpected error occurred while fetching Pokemon names: {e}")
+        except (ValueError, KeyError) as e:
+            logger.error(f"Error processing Pokemon list response: {e}")
             return []
+    
+    def _get_fallback_pokemon_list(self) -> List[str]:
+        """Return a fallback list of Pokemon names if the API is unavailable."""
+        return [
+            'bulbasaur', 'ivysaur', 'venusaur', 'charmander', 'charmeleon', 'charizard',
+            'squirtle', 'wartortle', 'blastoise', 'caterpie', 'metapod', 'butterfree',
+            'pikachu', 'raichu', 'sandshrew', 'sandslash', 'nidoran-f', 'nidorina',
+            'nidoqueen', 'nidoran-m', 'nidorino', 'nidoking', 'clefairy', 'clefable',
+            'vulpix', 'ninetales', 'jigglypuff', 'wigglytuff', 'zubat', 'golbat'
+            # Add more common Pokemon as needed
+        ]
 
     def get_all_pokemon_names(self) -> List[str]:
         """Return the cached list of Pokemon names."""
@@ -47,69 +104,86 @@ class PokemonService:
         return [random.randint(1, self.total_pokemon_count) for _ in range(count)]
     
     def get_pokemon_data(self, pokemon_id: int) -> Dict[str, Any]:
-        """Fetch data for a specific Pokemon by ID."""
+        """Fetch data for a specific Pokemon by ID with retry logic."""
+        url = f"{self.base_url}pokemon/{pokemon_id}"
+        
+        # First try with SSL verification
         try:
-            response = requests.get(f"{self.base_url}pokemon/{pokemon_id}")
+            response = self.session.get(url, verify=True, timeout=10)
             response.raise_for_status()
-            data = response.json()
-            
-            # Extract relevant information
+            return self._process_pokemon_data(response.json())
+        except (requests.RequestException, ValueError) as e:
+            logger.warning(f"First attempt failed for Pokemon ID {pokemon_id} with SSL: {e}")
+        
+        # Fallback to non-SSL if first attempt fails
+        try:
+            response = self.session.get(url, verify=False, timeout=10)
+            response.raise_for_status()
+            return self._process_pokemon_data(response.json())
+        except Exception as e:
+            logger.error(f"Failed to fetch Pokemon ID {pokemon_id} after retries: {e}")
+            return None
+    
+    def _process_pokemon_data(self, data: dict) -> Optional[Dict[str, Any]]:
+        """Process Pokemon data from the API response."""
+        try:
             pokemon = {
                 'id': data['id'],
                 'name': data['name'].capitalize(),
-                'sprite': data['sprites']['other']['official-artwork']['front_default'] 
-                         or data['sprites']['front_default'],
+                'sprite': (data['sprites'].get('other', {}).get('official-artwork', {}).get('front_default') or 
+                          data['sprites'].get('front_default')),
                 'stats': {stat['stat']['name']: stat['base_stat'] for stat in data['stats']},
                 'types': [t['type']['name'] for t in data['types']]
             }
-            
-            # Calculate total stats
             pokemon['total_stats'] = sum(pokemon['stats'].values())
-            
             return pokemon
-        except requests.RequestException as e:
-            logger.error(f"Error fetching Pokemon ID {pokemon_id}: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"An unexpected error occurred fetching Pokemon ID {pokemon_id}: {e}")
+        except (KeyError, TypeError) as e:
+            logger.error(f"Error processing Pokemon data: {e}")
             return None
 
     def get_pokemon_data_by_name(self, name: str) -> Optional[Dict[str, Any]]:
-        """Fetch data for a specific Pokemon by name."""
+        """Fetch data for a specific Pokemon by name with retry logic."""
         if not name:
             return None
+            
+        # Clean and normalize the name
+        name = name.strip().lower()
+        
+        # First try with SSL verification
         try:
-            # PokeAPI uses lowercase names in URLs
-            response = requests.get(f"{self.base_url}pokemon/{name.lower()}")
-            response.raise_for_status() # Will raise HTTPError for 404 Not Found
-            data = response.json()
-
-            # Extract relevant information (same structure as get_pokemon_data)
-            pokemon = {
-                'id': data['id'],
-                'name': data['name'].capitalize(),
-                'sprite': data['sprites']['other']['official-artwork']['front_default']
-                         or data['sprites']['front_default'],
-                'stats': {stat['stat']['name']: stat['base_stat'] for stat in data['stats']},
-                'types': [t['type']['name'] for t in data['types']]
-            }
-
-            # Calculate total stats
-            pokemon['total_stats'] = sum(pokemon['stats'].values())
-
-            return pokemon
+            response = self.session.get(
+                f"{self.base_url}pokemon/{name}",
+                verify=True,
+                timeout=10
+            )
+            response.raise_for_status()
+            return self._process_pokemon_data(response.json())
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
                 logger.warning(f"Pokemon not found: {name}")
+                return None
+            logger.warning(f"First attempt failed for Pokemon {name} with SSL: {e}")
+        except (requests.RequestException, ValueError) as e:
+            logger.warning(f"First attempt failed for Pokemon {name} with error: {e}")
+        
+        # Fallback to non-SSL if first attempt fails
+        try:
+            response = self.session.get(
+                f"{self.base_url}pokemon/{name}",
+                verify=False,
+                timeout=10
+            )
+            response.raise_for_status()
+            return self._process_pokemon_data(response.json())
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.warning(f"Pokemon not found (retry): {name}")
             else:
-                logger.error(f"HTTP error fetching Pokemon '{name}': {e}")
-            return None
-        except requests.RequestException as e:
-            logger.error(f"Request error fetching Pokemon '{name}': {e}")
-            return None
+                logger.error(f"HTTP error fetching Pokemon {name} (retry): {e}")
         except Exception as e:
-            logger.error(f"An unexpected error occurred fetching Pokemon '{name}': {e}")
-            return None
+            logger.error(f"Failed to fetch Pokemon {name} after retries: {e}")
+        
+        return None
 
     def generate_battle(self) -> Dict[str, Any]:
         """Generate a complete battle between two players."""
