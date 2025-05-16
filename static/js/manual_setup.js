@@ -29,6 +29,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Initialization ---
     fetchAllPokemonNames();
 
+    // --- Focus Management ---
+    function focusNextInputField(currentPlayer, currentIndex) {
+        // Try to find the next input in the same player's team
+        let nextIndex = currentIndex + 1;
+        let nextPlayer = currentPlayer;
+        
+        // If we're at the end of the current player's team, try the other player's first slot
+        if (nextIndex >= 6) {
+            nextIndex = 0;
+            nextPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        
+        // Try to find an input field that's not already selected
+        let attempts = 0;
+        const maxAttempts = 12; // Maximum number of attempts (6 slots * 2 players)
+        
+        while (attempts < maxAttempts) {
+            // Get the card element for the next slot
+            const nextCard = document.querySelector(
+                `.pokemon-card[data-player="${nextPlayer}"][data-index="${nextIndex}"]`
+            );
+            
+            // Check if it's in input mode (not already selected)
+            if (nextCard && nextCard.classList.contains('manual-input-mode')) {
+                const nextInput = nextCard.querySelector('.pokemon-input-in-card');
+                if (nextInput) {
+                    // Found an available input, focus it
+                    nextInput.focus();
+                    return;
+                }
+            }
+            
+            // Move to the next slot
+            nextIndex++;
+            if (nextIndex >= 6) {
+                nextIndex = 0;
+                nextPlayer = nextPlayer === 1 ? 2 : 1;
+            }
+            
+            attempts++;
+        }
+    }
+
     // --- Fetch Pokemon List ---
     async function fetchAllPokemonNames() {
         console.log('Fetching all Pokemon names for autocomplete...');
@@ -78,12 +121,22 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdown.appendChild(item);
         });
 
+        // Set the first item as active for keyboard navigation
+        const firstItem = dropdown.querySelector('.autocomplete-item');
+        if (firstItem) {
+            firstItem.classList.add('active-item');
+        }
+
         dropdown.classList.add('active');
         activeAutocomplete = dropdown;
     }
 
     function hideAutocomplete() {
         if (activeAutocomplete) {
+            // Remove any active-item classes
+            const activeItems = activeAutocomplete.querySelectorAll('.active-item');
+            activeItems.forEach(item => item.classList.remove('active-item'));
+            
             activeAutocomplete.classList.remove('active');
             activeAutocomplete = null;
         }
@@ -188,7 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // The remove button is now always visible in the HTML, no need to show/hide it here
     }
 
-
     async function handlePokemonSelection(inputElement, pokemonName) {
         const player = parseInt(inputElement.dataset.player);
         const index = parseInt(inputElement.dataset.index);
@@ -225,6 +277,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Trigger the flip to show the details face with the remove button
                 cardElement.classList.remove('manual-input-mode');
                 cardElement.classList.add('manual-selected-mode');
+                
+                // Focus the next available input field
+                focusNextInputField(player, index);
             }
             updateTeamStats(player); // Update overall team score display
             updateWinningIndicator(); // Check winner after selection
@@ -237,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
              inputElement.disabled = false; // Re-enable input
              cardElement.style.cursor = 'default';
-             // inputElement.focus(); // Maybe not focus here, as the input is now hidden
         }
     }
 
@@ -267,7 +321,6 @@ document.addEventListener('DOMContentLoaded', function() {
             detailsFace.querySelectorAll('.stat').forEach(stat => stat.textContent = '');
         }
     }
-
 
     // Update the total stats display for a player
     function updateTeamStats(player) {
@@ -342,7 +395,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // If teams are not complete, no classes are added (cleared above)
     }
 
-
     // --- Start Battle Logic ---
     function startManualBattle() {
         // Get names from editable headers, default if empty
@@ -351,7 +403,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update header text if it was empty to show the default
         if (!player1Header.textContent.trim()) player1Header.textContent = player1Name;
         if (!player2Header.textContent.trim()) player2Header.textContent = player2Name;
-
 
         const player1Ready = pokemonList1.filter(p => p !== null).length === 6;
         const player2Ready = pokemonList2.filter(p => p !== null).length === 6;
@@ -394,23 +445,127 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check if there's an active autocomplete dropdown
             const selectorDiv = inputElement.closest('.pokemon-selector');
             const dropdown = selectorDiv?.querySelector('.autocomplete-dropdown');
-            const firstSuggestion = dropdown?.querySelector('.autocomplete-item');
+            const activeSuggestion = dropdown?.querySelector('.autocomplete-item.active-item');
             
-            if (firstSuggestion) {
-                // If there are suggestions, select the first one
-                const pokemonName = firstSuggestion.textContent.toLowerCase();
-                inputElement.value = firstSuggestion.textContent; // Update input with formatted name
+            if (activeSuggestion) {
+                // If there's an active suggestion, select it
+                const pokemonName = activeSuggestion.textContent.toLowerCase();
+                inputElement.value = activeSuggestion.textContent; // Update input with formatted name
                 hideAutocomplete();
                 handlePokemonSelection(inputElement, pokemonName);
             } else if (inputElement.value.trim() !== '') {
                 // If no suggestions but there's input, try to submit it as is
                 handlePokemonSelection(inputElement, inputElement.value.trim());
             }
+        } else if (event.key === 'Tab' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            // Tab or arrow navigation for dropdown
+            const selectorDiv = inputElement.closest('.pokemon-selector');
+            const dropdown = selectorDiv?.querySelector('.autocomplete-dropdown.active');
+            
+            if (dropdown) {
+                event.preventDefault(); // Prevent default tab behavior
+                
+                const items = dropdown.querySelectorAll('.autocomplete-item');
+                if (items.length > 0) {
+                    // Navigate to next/previous item based on key
+                    navigateDropdownItems(items, dropdown, inputElement, event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey) ? 'up' : 'down');
+                }
+            }
         } else if (event.key === 'Escape') {
             // Hide dropdown on Escape
             hideAutocomplete();
         }
     }
+    
+    // Function to handle dropdown navigation
+    function navigateDropdownItems(items, dropdown, inputElement, direction) {
+        if (!items.length || !dropdown) return;
+        
+        // Find current active item
+        const currentActive = dropdown.querySelector('.active-item');
+        let nextIndex;
+        
+        if (!currentActive) {
+            // If no item is active, select the first one
+            nextIndex = 0;
+        } else {
+            // Find index of current active item
+            const currentIndex = Array.from(items).indexOf(currentActive);
+            currentActive.classList.remove('active-item');
+            
+            // Calculate next index based on direction
+            if (direction === 'up') {
+                nextIndex = (currentIndex - 1 + items.length) % items.length;
+            } else {
+                nextIndex = (currentIndex + 1) % items.length;
+            }
+        }
+        
+        const nextActive = items[nextIndex];
+        
+        // Important: Update input value first to maintain synchronization
+        inputElement.value = nextActive.textContent;
+        
+        // Set active class before scrolling
+        nextActive.classList.add('active-item');
+        
+        // Get key measurements
+        const itemTop = nextActive.offsetTop;
+        const itemHeight = nextActive.offsetHeight;
+        const dropdownHeight = dropdown.clientHeight;
+        const scrollMax = dropdown.scrollHeight - dropdownHeight;
+        
+        // Skip complex calculations and use a more direct approach
+        // Use the native scrollIntoView with different behaviors based on item position
+        
+        // For first/last items, handle specially to ensure they're at the edge with good visibility
+        if (nextIndex === 0) {
+            // First item - manually set scroll position instead of using scrollIntoView
+            // This prevents the page from scrolling when looping back to the top
+            dropdown.scrollTop = 0;
+        } 
+        else if (nextIndex === items.length - 1 || nextIndex >= items.length - 3) {
+            // Last few items - align to the bottom with extra padding to ensure full visibility
+            nextActive.scrollIntoView({
+                block: 'end', 
+                inline: 'nearest'
+            });
+            // Add extra padding at the bottom to ensure the item is fully visible
+            if (dropdown.scrollTop < scrollMax) {
+                dropdown.scrollTop += 5; // Add a bit more scroll to ensure full visibility
+            }
+        }
+        else {
+            // Middle items - center them for best visibility
+            nextActive.scrollIntoView({
+                block: 'center',
+                inline: 'nearest'
+            });
+        }
+        
+        // Safety check with additional padding for bottom items
+        // Run after a very short delay to ensure the UI has updated
+        setTimeout(() => {
+            const itemRect = nextActive.getBoundingClientRect();
+            const dropdownRect = dropdown.getBoundingClientRect();
+            
+            // Check if the item is at the bottom and potentially cut off
+            const isNearBottom = nextIndex >= items.length - 4;
+            const bottomOverlap = itemRect.bottom > dropdownRect.bottom;
+            
+            if (isNearBottom && bottomOverlap) {
+                // Force more aggressive scrolling for bottom items
+                nextActive.scrollIntoView({
+                    block: 'end',
+                    inline: 'nearest'
+                });
+                // Add additional padding
+                dropdown.scrollTop = dropdown.scrollTop + 20;
+            }
+        }, 10);
+    }
+
+    // This function is no longer used - we're using scrollIntoView directly in navigateDropdownItems
 
     allPokemonCardInputs.forEach(input => {
         input.addEventListener('input', handleAutocompleteInput);

@@ -569,19 +569,17 @@ button:hover, .button:hover {
 /* Autocomplete dropdown inside card */
 .manual-input-face .autocomplete-dropdown {
     position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    max-height: 200px;
+    width: 100%;
+    max-height: 185px; /* Adjusted to show exactly 4 items */
     overflow-y: auto;
-    background-color: #2d2d2d;
-    border: 1px solid #555;
-    border-top: none;
-    border-radius: 0 0 4px 4px;
-    z-index: 1000;
+    background-color: #252525;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    z-index: 100;
     display: none;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    margin-top: -1px; /* Align with input border */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    margin-top: 1px;
+    scroll-behavior: auto; /* Ensure immediate scrolling */
     scrollbar-width: thin;
     scrollbar-color: #555 #2d2d2d;
 }
@@ -617,10 +615,14 @@ button:hover, .button:hover {
     border-left: 3px solid transparent;
 }
 
-.manual-input-face .autocomplete-item:hover {
-    background-color: #3d3d3d;
-    border-left-color: #ff5c69;
-    padding-left: 1.25rem;
+.manual-input-face .autocomplete-item:hover, .autocomplete-item.active-item {
+    background-color: #333;
+    cursor: pointer;
+}
+
+.autocomplete-item.active-item {
+    border-left: 3px solid #ff5c69;
+    font-weight: bold;
 }
 
 .manual-input-face .autocomplete-item:not(:last-child) {
