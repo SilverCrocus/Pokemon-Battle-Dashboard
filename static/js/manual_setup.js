@@ -512,61 +512,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get key measurements
         const itemTop = nextActive.offsetTop;
         const itemHeight = nextActive.offsetHeight;
+        const itemBottom = itemTop + itemHeight; // Calculate the bottom position of the item
         const dropdownHeight = dropdown.clientHeight;
         const scrollMax = dropdown.scrollHeight - dropdownHeight;
         
-        // Skip complex calculations and use a more direct approach
-        // Use the native scrollIntoView with different behaviors based on item position
+        // Simplified approach for more reliable scrolling behavior
         
-        // For first/last items, handle specially to ensure they're at the edge with good visibility
-        if (nextIndex === 0) {
-            // First item - manually set scroll position instead of using scrollIntoView
-            // This prevents the page from scrolling when looping back to the top
+        // Case 1: Item is at the very top (first few items)
+        if (nextIndex <= 1) {
+            // For the first items, scroll to the very top
             dropdown.scrollTop = 0;
         } 
-        else if (nextIndex === items.length - 1 || nextIndex >= items.length - 3) {
-            // Last few items - align to the bottom with extra padding to ensure full visibility
-            nextActive.scrollIntoView({
-                block: 'end', 
-                inline: 'nearest'
-            });
-            // Add extra padding at the bottom to ensure the item is fully visible
-            if (dropdown.scrollTop < scrollMax) {
-                dropdown.scrollTop += 5; // Add a bit more scroll to ensure full visibility
-            }
+        // Case 2: Item is the very last item in the list
+        else if (nextIndex === items.length - 1) { 
+            // Guaranteed method for last item: scroll to bottom plus extra padding to ensure visibility
+            // Slight adjustment from absolute bottom to provide better visibility
+            dropdown.scrollTop = dropdown.scrollHeight - dropdown.clientHeight + 5;
         }
-        else {
-            // Middle items - center them for best visibility
-            nextActive.scrollIntoView({
-                block: 'center',
-                inline: 'nearest'
-            });
+        // Case 3: Item is near the bottom (but not the last)
+        else if (nextIndex >= items.length - 3) { 
+            // For items near the bottom, use more space
+            dropdown.scrollTop = Math.max(0, itemTop - 40); // Show more above the item
+        } 
+        // Case 3: Item is not fully visible
+        else if (itemTop < dropdown.scrollTop || itemBottom > (dropdown.scrollTop + dropdownHeight)) {
+            // Center approach for middle items
+            const targetScrollTop = itemTop - ((dropdownHeight - itemHeight) / 2);
+            dropdown.scrollTop = Math.max(0, Math.min(targetScrollTop, scrollMax));
         }
-        
-        // Safety check with additional padding for bottom items
-        // Run after a very short delay to ensure the UI has updated
-        setTimeout(() => {
-            const itemRect = nextActive.getBoundingClientRect();
-            const dropdownRect = dropdown.getBoundingClientRect();
-            
-            // Check if the item is at the bottom and potentially cut off
-            const isNearBottom = nextIndex >= items.length - 4;
-            const bottomOverlap = itemRect.bottom > dropdownRect.bottom;
-            
-            if (isNearBottom && bottomOverlap) {
-                // Force more aggressive scrolling for bottom items
-                nextActive.scrollIntoView({
-                    block: 'end',
-                    inline: 'nearest'
-                });
-                // Add additional padding
-                dropdown.scrollTop = dropdown.scrollTop + 20;
-            }
-        }, 10);
+        // Otherwise: Item is already fully visible, don't change scroll position
     }
 
-    // This function is no longer used - we're using scrollIntoView directly in navigateDropdownItems
-
+    // Attach event listeners to all Pokemon card inputs
     allPokemonCardInputs.forEach(input => {
         input.addEventListener('input', handleAutocompleteInput);
         input.addEventListener('keydown', handleInputKeyDown);
