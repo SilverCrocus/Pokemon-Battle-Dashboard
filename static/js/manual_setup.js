@@ -135,10 +135,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const detailsFace = cardElement.querySelector('.manual-details-face');
         if (!detailsFace) return;
 
-        // Set image
+        // Set up clickable image that links to Pokédex entry
+        const pokemonImageContainer = detailsFace.querySelector('.pokemon-image');
         const img = detailsFace.querySelector('.pokemon-image img');
         img.src = pokemon.sprite || ''; // Handle null sprite
         img.alt = pokemon.name;
+        
+        // Create or update the link
+        let link = pokemonImageContainer.querySelector('a');
+        if (!link) {
+            link = document.createElement('a');
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            pokemonImageContainer.innerHTML = ''; // Clear existing content
+            pokemonImageContainer.appendChild(link);
+            link.appendChild(img);
+        }
+        
+        // Format the Pokémon name for the URL (handle special characters and forms)
+        const formattedName = pokemon.name
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, '') // Remove any special characters except hyphens
+            .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
+            .replace(/--+/g, '-');       // Replace multiple hyphens with single
+            
+        link.href = `https://pokemondb.net/pokedex/${formattedName}`;
+        link.title = `View ${pokemon.name} on Pokédex`;
 
         // Set name
         detailsFace.querySelector('.pokemon-name').textContent = pokemon.name;
@@ -361,8 +383,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Event Listeners ---
+    // Handle keyboard events for the input
+    function handleInputKeyDown(event) {
+        const inputElement = event.target;
+        
+        // Check if Enter key is pressed
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent form submission if any
+            
+            // Check if there's an active autocomplete dropdown
+            const selectorDiv = inputElement.closest('.pokemon-selector');
+            const dropdown = selectorDiv?.querySelector('.autocomplete-dropdown');
+            const firstSuggestion = dropdown?.querySelector('.autocomplete-item');
+            
+            if (firstSuggestion) {
+                // If there are suggestions, select the first one
+                const pokemonName = firstSuggestion.textContent.toLowerCase();
+                inputElement.value = firstSuggestion.textContent; // Update input with formatted name
+                hideAutocomplete();
+                handlePokemonSelection(inputElement, pokemonName);
+            } else if (inputElement.value.trim() !== '') {
+                // If no suggestions but there's input, try to submit it as is
+                handlePokemonSelection(inputElement, inputElement.value.trim());
+            }
+        } else if (event.key === 'Escape') {
+            // Hide dropdown on Escape
+            hideAutocomplete();
+        }
+    }
+
     allPokemonCardInputs.forEach(input => {
         input.addEventListener('input', handleAutocompleteInput);
+        input.addEventListener('keydown', handleInputKeyDown);
         input.addEventListener('blur', () => setTimeout(hideAutocomplete, 150)); // Delay hide
         input.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
