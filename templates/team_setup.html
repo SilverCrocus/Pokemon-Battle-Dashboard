@@ -6,10 +6,15 @@
     <title>Team Setup</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <div class="container">
+<body {% if error_message %}data-error-message="{{ error_message }}"{% endif %}>
+    <div class="container" data-session-id="{{ session_id }}">
+        <div id="status-message">
+            {% if error_message %}
+                <p class="error">{{ error_message }}</p>
+            {% endif %}
+        </div>
         <h1>Select Your Team</h1>
-        <p>Session ID: <span id="session-id"></span></p>
+        <p>Session ID: <span id="session-id">{{ session_id }}</span></p>
         <form id="team-setup-form">
             <h2>Your Team (<span id="selected-count">0</span>/6)</h2>
             <div id="team-slots-container">
@@ -20,7 +25,7 @@
                 </div>
                 <div class="team-slot" data-slot-index="1">
                     <input type="text" class="pokemon-slot-input" placeholder="Type Pokemon name..." data-slot-index="1">
-c                    <div class="pokemon-card-display"></div>
+                    <div class="pokemon-card-display"></div>
                     <div class="autocomplete-results-slot"></div>
                 </div>
                 <div class="team-slot" data-slot-index="2">

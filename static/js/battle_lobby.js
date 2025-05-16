@@ -5,9 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const socket = io();
 
+    // Try to get session ID from URL params first
     const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('session_id');
+    let sessionId = urlParams.get('session_id');
+    
+    // If not in URL, try to get from data attribute (server-side generated)
+    if (!sessionId) {
+        const container = document.querySelector('.container');
+        sessionId = container.dataset.sessionId;
+    }
 
+    // Still no session ID? Then show error
     if (!sessionId) {
         lobbyStatus.textContent = 'Error: Invalid battle session ID.';
         readyButton.disabled = true;
@@ -37,10 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('battle_start', (data) => {
         console.log('Battle start signal received:', data);
-        console.log('Redirecting to team setup...');
-        console.log('Attempting redirect to:', `/team_setup?session_id=${sessionId}`);
-        // Redirect to the team setup page
-        window.location.href = `/team_setup?session_id=${sessionId}`;
+        if (data && data.session_id) { // Check if data and data.session_id exist
+            console.log(`Redirecting to team setup for session: ${data.session_id}`);
+            lobbyStatus.textContent = 'Both players ready. Redirecting to team setup...'; // Update status
+            window.location.href = `/team_setup?session_id=${data.session_id}`;
+        } else {
+            console.error('Battle start event received without a valid session_id!', data);
+            lobbyStatus.textContent = 'Error: Could not start battle (missing session information from server).';
+            // Optionally re-enable ready button or provide other user feedback
+            // readyButton.disabled = false; 
+        }
     });
 
     socket.on('error_message', (data) => {

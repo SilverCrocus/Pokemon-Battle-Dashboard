@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container">
+    <div class="container" data-session-id="{{ session_id }}">
         <h1>Battle Lobby</h1>
         <p>Share this link with your opponent:</p>
         <p id="battle-link">{{ url_for('battle_lobby_page', session_id=session_id, _external=True) }}</p>

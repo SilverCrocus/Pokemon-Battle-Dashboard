@@ -22,11 +22,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('connect', () => {
         console.log('Connected to WebSocket server');
-        // Maybe join a room specific to the battle page/session?
-        // Example: socket.emit('join_battle_room', { session_id: sessionId });
-        // This depends on server setup; for now, default namespace might be fine
-        // if server handles session_id correctly.
-         addLogEntry('Connected to battle server.');
+        
+        // Store connection attempt count in localStorage to help with reconnection attempts
+        const connectionAttempts = parseInt(localStorage.getItem(`battle_connection_attempts_${sessionId}`) || '0') + 1;
+        localStorage.setItem(`battle_connection_attempts_${sessionId}`, connectionAttempts.toString());
+        
+        // If this is a reconnection attempt, let the server know
+        const reconnectData = { 
+            session_id: sessionId
+        };
+        
+        // Try to recover user role from localStorage if this is a reconnection
+        const storedRole = localStorage.getItem(`battle_player_role_${sessionId}`);
+        if (storedRole && connectionAttempts > 1) {
+            console.log(`Attempting to reconnect as ${storedRole}`);
+            reconnectData.reconnect_token = localStorage.getItem(`battle_reconnect_token_${sessionId}`);
+            addLogEntry('Attempting to reconnect to battle...');
+        } else {
+            addLogEntry('Connected to battle server.');
+        }
+        
+        // Join the battle room for this session
+        socket.emit('join_battle', reconnectData);
     });
 
     socket.on('disconnect', () => {
@@ -50,7 +67,43 @@ document.addEventListener('DOMContentLoaded', () => {
     // Listen for the corrected event name
     socket.on('battle_update', (data) => {
         console.log('Battle state update received:', data);
+        
+        // Determine and store player role for reconnection purposes
+        if (data.player1_data && data.player2_data) {
+            const player1Sid = data.player1_data.sid;
+            const player2Sid = data.player2_data.sid;
+            
+            // Generate a simple reconnect token (in a real app, use something more secure)
+            const reconnectToken = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+            
+            // Store role information for this session
+            if (socket.id === player1Sid) {
+                localStorage.setItem(`battle_player_role_${sessionId}`, 'player1');
+                localStorage.setItem(`battle_reconnect_token_${sessionId}`, reconnectToken);
+                console.log('Identified as player1 for this battle');
+                
+                // Update server with reconnect token
+                socket.emit('store_reconnect_token', {
+                    session_id: sessionId,
+                    role: 'player1',
+                    token: reconnectToken
+                });
+            } else if (socket.id === player2Sid) {
+                localStorage.setItem(`battle_player_role_${sessionId}`, 'player2');
+                localStorage.setItem(`battle_reconnect_token_${sessionId}`, reconnectToken);
+                console.log('Identified as player2 for this battle');
+                
+                // Update server with reconnect token
+                socket.emit('store_reconnect_token', {
+                    session_id: sessionId,
+                    role: 'player2',
+                    token: reconnectToken
+                });
+            }
+        }
+        
         updateBattleUI(data); // Update UI with the new state
+        
         // Clear "Waiting for opponent..." message if player needs to act again
         if (data.prompt_action) { // Assuming the state indicates if the player needs to act
              if (data.player_pokemon && data.player_pokemon.moves) {
@@ -64,6 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Game over:', data);
         addLogEntry(`Game Over! Winner: ${data.winner}, Loser: ${data.loser}`);
         moveOptionsDiv.innerHTML = '<h2>Game Over</h2>'; // Clear move options and show game over
+    });
+    
+    // Listen for notifications when players join or reconnect
+    socket.on('player_joined', (data) => {
+        console.log('Player joined:', data);
+        const role = data.role === 'player1' ? 'Player 1' : 'Player 2';
+        addLogEntry(`${role} has joined the battle.`);
     });
 
     // We don't expect 'battle_log_message' or 'move_options' as separate events
