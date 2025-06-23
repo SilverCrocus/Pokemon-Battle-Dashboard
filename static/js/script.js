@@ -406,7 +406,12 @@ document.addEventListener('DOMContentLoaded', function() {
         img.alt = pokemon.name;
         
         // Set name
-        cardElement.querySelector('.pokemon-name').textContent = pokemon.name;
+        // Set name with total stats badge
+        const nameElement = cardElement.querySelector('.pokemon-name');
+        nameElement.innerHTML = `
+            ${pokemon.name}
+            <span class="pokemon-total-badge">${pokemon.total_stats}</span>
+        `;
         
         // Set types
         const typesContainer = cardElement.querySelector('.pokemon-types');
