@@ -29,6 +29,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Initialization ---
     fetchAllPokemonNames();
 
+    // --- Focus Management ---
+    function focusNextInputField(currentPlayer, currentIndex) {
+        // Try to find the next input in the same player's team
+        let nextIndex = currentIndex + 1;
+        let nextPlayer = currentPlayer;
+        
+        // If we're at the end of the current player's team, try the other player's first slot
+        if (nextIndex >= 6) {
+            nextIndex = 0;
+            nextPlayer = currentPlayer === 1 ? 2 : 1;
+        }
+        
+        // Try to find an input field that's not already selected
+        let attempts = 0;
+        const maxAttempts = 12; // Maximum number of attempts (6 slots * 2 players)
+        
+        while (attempts < maxAttempts) {
+            // Get the card element for the next slot
+            const nextCard = document.querySelector(
+                `.pokemon-card[data-player="${nextPlayer}"][data-index="${nextIndex}"]`
+            );
+            
+            // Check if it's in input mode (not already selected)
+            if (nextCard && nextCard.classList.contains('manual-input-mode')) {
+                const nextInput = nextCard.querySelector('.pokemon-input-in-card');
+                if (nextInput) {
+                    // Found an available input, focus it
+                    nextInput.focus();
+                    return;
+                }
+            }
+            
+            // Move to the next slot
+            nextIndex++;
+            if (nextIndex >= 6) {
+                nextIndex = 0;
+                nextPlayer = nextPlayer === 1 ? 2 : 1;
+            }
+            
+            attempts++;
+        }
+    }
+
     // --- Fetch Pokemon List ---
     async function fetchAllPokemonNames() {
         console.log('Fetching all Pokemon names for autocomplete...');
@@ -78,12 +121,22 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdown.appendChild(item);
         });
 
+        // Set the first item as active for keyboard navigation
+        const firstItem = dropdown.querySelector('.autocomplete-item');
+        if (firstItem) {
+            firstItem.classList.add('active-item');
+        }
+
         dropdown.classList.add('active');
         activeAutocomplete = dropdown;
     }
 
     function hideAutocomplete() {
         if (activeAutocomplete) {
+            // Remove any active-item classes
+            const activeItems = activeAutocomplete.querySelectorAll('.active-item');
+            activeItems.forEach(item => item.classList.remove('active-item'));
+            
             activeAutocomplete.classList.remove('active');
             activeAutocomplete = null;
         }
@@ -91,29 +144,83 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleAutocompleteInput(event) {
         const inputElement = event.target; // Should be .pokemon-input-in-card
-        const value = inputElement.value.toLowerCase();
-        if (value.length < 1) { // Suggest even from 1 character
+        const value = inputElement.value.trim().toLowerCase();
+        
+        // Always show suggestions when there's input, even if it's just one character
+        if (value.length < 1) {
             hideAutocomplete();
             return;
         }
-        const suggestions = allPokemonNames.filter(name => name.toLowerCase().startsWith(value));
-        showAutocomplete(inputElement, suggestions);
+        
+        // Filter names that start with the input value
+        const suggestions = allPokemonNames.filter(name => 
+            name.toLowerCase().startsWith(value)
+        );
+        
+        // Also include names that contain the input value but don't start with it
+        const moreSuggestions = allPokemonNames.filter(name => 
+            name.toLowerCase().includes(value) && 
+            !suggestions.includes(name)
+        );
+        
+        const allSuggestions = [...suggestions, ...moreSuggestions].slice(0, 10);
+        showAutocomplete(inputElement, allSuggestions);
     }
 
     // --- Manual Selection Handling ---
+
+    // Function to show the remove button with a smooth fade-in
+    function showRemoveButton(button) {
+        if (!button) return;
+        button.style.display = 'inline-block';
+        button.style.opacity = '0';
+        // Trigger reflow to ensure the initial state is applied
+        void button.offsetWidth;
+        // Fade in
+        button.style.transition = 'opacity 0.2s ease';
+        button.style.opacity = '0.9';
+        // Make sure the button is above the card content
+        button.style.zIndex = '100';
+    }
 
     // Update a Pokemon card with real data (copied from script.js and adapted)
     function updatePokemonCardDisplay(cardElement, pokemon) {
         const detailsFace = cardElement.querySelector('.manual-details-face');
         if (!detailsFace) return;
 
-        // Set image
+        // Set up clickable image that links to Pokédex entry
+        const pokemonImageContainer = detailsFace.querySelector('.pokemon-image');
         const img = detailsFace.querySelector('.pokemon-image img');
         img.src = pokemon.sprite || ''; // Handle null sprite
         img.alt = pokemon.name;
+        
+        // Create or update the link
+        let link = pokemonImageContainer.querySelector('a');
+        if (!link) {
+            link = document.createElement('a');
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            pokemonImageContainer.innerHTML = ''; // Clear existing content
+            pokemonImageContainer.appendChild(link);
+            link.appendChild(img);
+        }
+        
+        // Format the Pokémon name for the URL (handle special characters and forms)
+        const formattedName = pokemon.name
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, '') // Remove any special characters except hyphens
+            .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
+            .replace(/--+/g, '-');       // Replace multiple hyphens with single
+            
+        link.href = `https://pokemondb.net/pokedex/${formattedName}`;
+        link.title = `View ${pokemon.name} on Pokédex`;
 
-        // Set name
-        detailsFace.querySelector('.pokemon-name').textContent = pokemon.name;
+        // Set name with total stats badge
+        const nameElement = detailsFace.querySelector('.pokemon-name');
+        nameElement.innerHTML = `
+            ${pokemon.name}
+            <span class="pokemon-total-badge">${pokemon.total_stats}</span>
+        `;
 
         // Set types
         const typesContainer = detailsFace.querySelector('.pokemon-types');
@@ -134,8 +241,9 @@ document.addEventListener('DOMContentLoaded', function() {
         detailsFace.querySelector('.stat.special-defense').textContent = `SpD: ${pokemon.stats['special-defense']}`;
         detailsFace.querySelector('.stat.speed').textContent = `Spd: ${pokemon.stats.speed}`;
         detailsFace.querySelector('.stat.total').textContent = `Total: ${pokemon.total_stats}`;
+        
+        // The remove button is now always visible in the HTML, no need to show/hide it here
     }
-
 
     async function handlePokemonSelection(inputElement, pokemonName) {
         const player = parseInt(inputElement.dataset.player);
@@ -169,11 +277,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Update the card display
                 updatePokemonCardDisplay(cardElement, pokemonData);
+                
+                // Trigger the flip to show the details face with the remove button
                 cardElement.classList.remove('manual-input-mode');
                 cardElement.classList.add('manual-selected-mode');
-                // Show remove button
-                const removeBtn = cardElement.querySelector('.remove-pokemon');
-                if(removeBtn) removeBtn.style.display = 'inline-block';
+                
+                // Focus the next available input field
+                focusNextInputField(player, index);
             }
             updateTeamStats(player); // Update overall team score display
             updateWinningIndicator(); // Check winner after selection
@@ -186,23 +296,34 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
              inputElement.disabled = false; // Re-enable input
              cardElement.style.cursor = 'default';
-             // inputElement.focus(); // Maybe not focus here, as the input is now hidden
         }
     }
 
     // Clear data and reset card to input mode
     function clearPokemonSlot(player, index, cardElement) {
-         if (player === 1) pokemonList1[index] = null;
-         else pokemonList2[index] = null;
+        if (player === 1) pokemonList1[index] = null;
+        else pokemonList2[index] = null;
 
-         cardElement.classList.remove('manual-selected-mode');
-         cardElement.classList.add('manual-input-mode');
+        // Flip the card back to input mode
+        cardElement.classList.remove('manual-selected-mode');
+        cardElement.classList.add('manual-input-mode');
 
-         const input = cardElement.querySelector('.pokemon-input-in-card');
-         if (input) input.value = '';
+        // Clear the input and details
+        const input = cardElement.querySelector('.pokemon-input-in-card');
+        if (input) input.value = '';
 
-         const removeBtn = cardElement.querySelector('.remove-pokemon');
-         if(removeBtn) removeBtn.style.display = 'none';
+        // Clear the details face
+        const detailsFace = cardElement.querySelector('.manual-details-face');
+        if (detailsFace) {
+            const img = detailsFace.querySelector('.pokemon-image img');
+            if (img) img.src = '';
+            const nameEl = detailsFace.querySelector('.pokemon-name');
+            if (nameEl) nameEl.textContent = '';
+            const typesEl = detailsFace.querySelector('.pokemon-types');
+            if (typesEl) typesEl.innerHTML = '';
+            // Clear stats
+            detailsFace.querySelectorAll('.stat').forEach(stat => stat.textContent = '');
+        }
     }
 
     // Update the total stats display for a player
@@ -212,15 +333,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let currentTotalStats = 0;
         let pokemonCount = 0;
+        const pokemonStats = [];
 
         teamList.forEach(pokemon => {
             if (pokemon) {
                 pokemonCount++;
                 currentTotalStats += pokemon.total_stats;
+                pokemonStats.push(pokemon.total_stats);
             }
         });
 
-        teamStatsDiv.textContent = `Total Stats: ${currentTotalStats}`;
+        // Enhanced display with individual Pokemon stats
+        if (pokemonCount > 0) {
+            const avgStats = Math.round(currentTotalStats / pokemonCount);
+            const statsBreakdown = pokemonStats.join(' + ');
+            teamStatsDiv.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">
+                    📊 Total Stats: <span style="color: var(--secondary-color);">${currentTotalStats}</span>
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">
+                    ${pokemonCount}/6 Pokemon • Avg: ${avgStats}
+                </div>
+                ${pokemonCount > 1 ? `<div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">${statsBreakdown}</div>` : ''}
+            `;
+        } else {
+            teamStatsDiv.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 700;">
+                    📊 Total Stats: 0
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">
+                    0/6 Pokemon selected
+                </div>
+            `;
+        }
+
         if (pokemonCount === 6) {
             teamStatsDiv.classList.add('team-complete');
             teamStatsDiv.classList.remove('team-incomplete');
@@ -278,7 +424,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // If teams are not complete, no classes are added (cleared above)
     }
 
-
     // --- Start Battle Logic ---
     function startManualBattle() {
         // Get names from editable headers, default if empty
@@ -287,7 +432,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update header text if it was empty to show the default
         if (!player1Header.textContent.trim()) player1Header.textContent = player1Name;
         if (!player2Header.textContent.trim()) player2Header.textContent = player2Name;
-
 
         const player1Ready = pokemonList1.filter(p => p !== null).length === 6;
         const player2Ready = pokemonList2.filter(p => p !== null).length === 6;
@@ -319,8 +463,119 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Event Listeners ---
+    // Handle keyboard events for the input
+    function handleInputKeyDown(event) {
+        const inputElement = event.target;
+        
+        // Check if Enter key is pressed
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent form submission if any
+            
+            // Check if there's an active autocomplete dropdown
+            const selectorDiv = inputElement.closest('.pokemon-selector');
+            const dropdown = selectorDiv?.querySelector('.autocomplete-dropdown');
+            const activeSuggestion = dropdown?.querySelector('.autocomplete-item.active-item');
+            
+            if (activeSuggestion) {
+                // If there's an active suggestion, select it
+                const pokemonName = activeSuggestion.textContent.toLowerCase();
+                inputElement.value = activeSuggestion.textContent; // Update input with formatted name
+                hideAutocomplete();
+                handlePokemonSelection(inputElement, pokemonName);
+            } else if (inputElement.value.trim() !== '') {
+                // If no suggestions but there's input, try to submit it as is
+                handlePokemonSelection(inputElement, inputElement.value.trim());
+            }
+        } else if (event.key === 'Tab' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            // Tab or arrow navigation for dropdown
+            const selectorDiv = inputElement.closest('.pokemon-selector');
+            const dropdown = selectorDiv?.querySelector('.autocomplete-dropdown.active');
+            
+            if (dropdown) {
+                event.preventDefault(); // Prevent default tab behavior
+                
+                const items = dropdown.querySelectorAll('.autocomplete-item');
+                if (items.length > 0) {
+                    // Navigate to next/previous item based on key
+                    navigateDropdownItems(items, dropdown, inputElement, event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey) ? 'up' : 'down');
+                }
+            }
+        } else if (event.key === 'Escape') {
+            // Hide dropdown on Escape
+            hideAutocomplete();
+        }
+    }
+    
+    // Function to handle dropdown navigation
+    function navigateDropdownItems(items, dropdown, inputElement, direction) {
+        if (!items.length || !dropdown) return;
+        
+        // Find current active item
+        const currentActive = dropdown.querySelector('.active-item');
+        let nextIndex;
+        
+        if (!currentActive) {
+            // If no item is active, select the first one
+            nextIndex = 0;
+        } else {
+            // Find index of current active item
+            const currentIndex = Array.from(items).indexOf(currentActive);
+            currentActive.classList.remove('active-item');
+            
+            // Calculate next index based on direction
+            if (direction === 'up') {
+                nextIndex = (currentIndex - 1 + items.length) % items.length;
+            } else {
+                nextIndex = (currentIndex + 1) % items.length;
+            }
+        }
+        
+        const nextActive = items[nextIndex];
+        
+        // Important: Update input value first to maintain synchronization
+        inputElement.value = nextActive.textContent;
+        
+        // Set active class before scrolling
+        nextActive.classList.add('active-item');
+        
+        // Get key measurements
+        const itemTop = nextActive.offsetTop;
+        const itemHeight = nextActive.offsetHeight;
+        const itemBottom = itemTop + itemHeight; // Calculate the bottom position of the item
+        const dropdownHeight = dropdown.clientHeight;
+        const scrollMax = dropdown.scrollHeight - dropdownHeight;
+        
+        // Simplified approach for more reliable scrolling behavior
+        
+        // Case 1: Item is at the very top (first few items)
+        if (nextIndex <= 1) {
+            // For the first items, scroll to the very top
+            dropdown.scrollTop = 0;
+        } 
+        // Case 2: Item is the very last item in the list
+        else if (nextIndex === items.length - 1) { 
+            // Guaranteed method for last item: scroll to bottom plus extra padding to ensure visibility
+            // Slight adjustment from absolute bottom to provide better visibility
+            dropdown.scrollTop = dropdown.scrollHeight - dropdown.clientHeight + 5;
+        }
+        // Case 3: Item is near the bottom (but not the last)
+        else if (nextIndex >= items.length - 3) { 
+            // For items near the bottom, use more space
+            dropdown.scrollTop = Math.max(0, itemTop - 40); // Show more above the item
+        } 
+        // Case 3: Item is not fully visible
+        else if (itemTop < dropdown.scrollTop || itemBottom > (dropdown.scrollTop + dropdownHeight)) {
+            // Center approach for middle items
+            const targetScrollTop = itemTop - ((dropdownHeight - itemHeight) / 2);
+            dropdown.scrollTop = Math.max(0, Math.min(targetScrollTop, scrollMax));
+        }
+        // Otherwise: Item is already fully visible, don't change scroll position
+    }
+
+    // Attach event listeners to all Pokemon card inputs
     allPokemonCardInputs.forEach(input => {
         input.addEventListener('input', handleAutocompleteInput);
+        input.addEventListener('keydown', handleInputKeyDown);
         input.addEventListener('blur', () => setTimeout(hideAutocomplete, 150)); // Delay hide
         input.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
@@ -356,18 +611,33 @@ document.addEventListener('DOMContentLoaded', function() {
         input.disabled = true;
     });
 
-    // Add listeners to remove buttons (needs to be delegated or added after creation)
-    // Since buttons are added/removed dynamically, delegate from a static parent
-    document.querySelector('.container').addEventListener('click', function(event) {
-        if (event.target.classList.contains('remove-pokemon')) {
+    // Handle all click events on the document
+    document.addEventListener('click', function(event) {
+        // Handle remove button clicks
+        const removeBtn = event.target.closest('.remove-pokemon');
+        if (removeBtn) {
+            event.preventDefault();
+            event.stopPropagation();
             handleRemovePokemon(event);
+            return;
+        }
+        
+        // Handle clicks on autocomplete items
+        const autocompleteItem = event.target.closest('.autocomplete-item');
+        if (autocompleteItem) {
+            event.stopPropagation();
+            return;
+        }
+        
+        // Hide autocomplete when clicking outside a selector
+        if (!event.target.closest('.pokemon-selector')) {
+            hideAutocomplete();
         }
     });
-
-
-    document.addEventListener('click', (event) => {
-        // Hide autocomplete if clicking outside a selector
-        if (!event.target.closest('.pokemon-selector')) {
+    
+    // Handle keyboard navigation for autocomplete
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
             hideAutocomplete();
         }
     });

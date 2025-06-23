@@ -5,44 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokemon Battle Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="Interactive Pokemon Battle Dashboard - Create teams and battle Pokemon with stunning visuals">
+    <meta name="theme-color" content="#ff6b6b">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Pokemon Battle Dashboard</h1>
+            <h1>⚔️ Pokemon Battle Dashboard</h1>
         </header>
 
         <!-- Setup Form -->
         <div class="setup-form" id="setup-form">
-            <h2>Battle Setup</h2>
+            <h2>🎮 Battle Setup</h2>
             <div class="form-group">
-                <label for="player1-name">Player 1 Name:</label>
-                <input type="text" id="player1-name" value="Player 1">
+                <label for="player1-name">👤 Player 1 Name:</label>
+                <input type="text" id="player1-name" value="Player 1" placeholder="Enter player 1 name">
             </div>
             <div class="form-group">
-                <label for="player2-name">Player 2 Name:</label>
-                <input type="text" id="player2-name" value="Player 2">
+                <label for="player2-name">👤 Player 2 Name:</label>
+                <input type="text" id="player2-name" value="Player 2" placeholder="Enter player 2 name">
             </div>
             <div class="form-group">
-                <label>Reveal Mode:</label>
+                <label>🎯 Reveal Mode:</label>
                 <div class="radio-group">
-                    <input type="radio" id="auto-reveal" name="reveal-mode" value="auto" checked>
-                    <label for="auto-reveal">Auto Reveal</label>
-                    <input type="radio" id="manual-reveal" name="reveal-mode" value="manual">
-                    <label for="manual-reveal">Manual Reveal</label>
+                    <label for="auto-reveal">
+                        <input type="radio" id="auto-reveal" name="reveal-mode" value="auto" checked>
+                        ⚡ Auto Reveal
+                    </label>
+                    <label for="manual-reveal">
+                        <input type="radio" id="manual-reveal" name="reveal-mode" value="manual">
+                        🎯 Manual Reveal
+                    </label>
                 </div>
             </div>
-            <button id="start-battle-btn">Start Random Battle</button>
-            <div style="text-align: center; margin-top: 1rem;">
-                <a href="/manual_setup" class="button" style="background-color: #555; display: inline-block;">Build Teams Manually</a>
+            <button id="start-battle-btn" class="button">
+                🎲 Start Random Battle
+            </button>
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <a href="/manual_setup" class="button button-secondary">
+                    🔧 Build Teams Manually
+                </a>
             </div>
         </div>
 
         <!-- Loading Indicator -->
         <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
-            <p>Generating Battle...</p>
+            <p>✨ Generating Epic Battle...</p>
         </div>
         
         <!-- Battle Container -->
@@ -50,7 +62,7 @@
             <div class="battle-header">
                 <div class="winner-banner" id="winner-banner" style="display: none;"></div>
                 <div class="battle-info">
-                    <p id="battle-status">The battle will reveal Pokémon one by one, alternating between players.</p>
+                    <p id="battle-status">🔮 The battle will reveal Pokémon one by one, alternating between players.</p>
                 </div>
                 <div class="progress-bar">
                     <div id="reveal-progress-text">Revealing: 0/12 Pokemon</div>
@@ -64,30 +76,36 @@
                     <div class="player-score">
                         <span id="fixed-player1-name">Player 1</span>: <span id="fixed-player1-score" class="score-value">0</span>
                     </div>
-                    <div class="vs-mini">VS</div>
+                    <div class="vs-mini">⚔️</div>
                     <div class="player-score">
                         <span id="fixed-player2-name">Player 2</span>: <span id="fixed-player2-score" class="score-value">0</span>
                     </div>
                 </div>
                 
                 <div class="reveal-controls">
-                    <button id="reveal-next-btn" style="display: none;">Reveal Next Pokemon</button>
-                    <button id="reveal-all-btn">Reveal All</button>
-                    <button id="new-battle-btn">New Battle</button>
+                    <button id="reveal-next-btn" style="display: none;">
+                        🎯 Reveal Next Pokemon
+                    </button>
+                    <button id="reveal-all-btn">
+                        💥 Reveal All
+                    </button>
+                    <button id="new-battle-btn" class="button-secondary">
+                        🔄 New Battle
+                    </button>
                 </div>
             </div>
             
             <div class="battle-grid">
                 <div class="player-section">
-                    <h2 id="player1-header">Player 1</h2>
+                    <h2 id="player1-header">👤 Player 1</h2>
                     <div class="score-display">Score: <span id="player1-score">0</span></div>
                     <div class="pokemon-grid" id="player1-pokemon"></div>
                 </div>
                 
-                <div class="vs-section">VS</div>
+                <div class="vs-section">⚔️</div>
                 
                 <div class="player-section">
-                    <h2 id="player2-header">Player 2</h2>
+                    <h2 id="player2-header">👤 Player 2</h2>
                     <div class="score-display">Score: <span id="player2-score">0</span></div>
                     <div class="pokemon-grid" id="player2-pokemon"></div>
                 </div>
