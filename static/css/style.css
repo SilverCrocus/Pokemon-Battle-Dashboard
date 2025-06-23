@@ -565,6 +565,7 @@ button:disabled {
     height: 350px;
     perspective: 1000px;
     transition: all var(--transition-normal);
+    background: transparent;
 }
 
 .pokemon-card:hover {
@@ -577,6 +578,7 @@ button:disabled {
     height: 100%;
     transition: transform var(--transition-slow);
     transform-style: preserve-3d;
+    background: transparent;
 }
 
 .card-inner {
@@ -585,6 +587,7 @@ button:disabled {
     height: 100%;
     transition: transform var(--transition-slow);
     transform-style: preserve-3d;
+    background: transparent;
 }
 
 .card-front, .card-back, .manual-input-face, .manual-details-face {
@@ -596,6 +599,7 @@ button:disabled {
     box-shadow: var(--shadow-lg);
     border: 2px solid var(--border-primary);
     overflow: hidden;
+    background-clip: padding-box;
 }
 
 .card-front, .manual-input-face {
@@ -608,7 +612,7 @@ button:disabled {
 .card-back, .manual-details-face {
     background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-input) 100%);
     transform: rotateY(180deg);
-    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl) var(--spacing-lg);
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md) var(--spacing-lg);
     display: flex;
     flex-direction: column;
 }
@@ -720,6 +724,7 @@ button:disabled {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-xs);
     margin-top: auto;
+    margin-bottom: 5rem;
 }
 
 .stat {
@@ -776,26 +781,40 @@ button:disabled {
 
 /* Enhanced Winner Banner */
 .winner-banner {
-    background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+    background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
     color: white;
-    padding: var(--spacing-lg);
+    padding: 2rem;
     text-align: center;
     border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-lg);
-    font-size: 1.5rem;
-    font-weight: 700;
-    animation: slideDown 0.5s ease-out;
-    box-shadow: var(--shadow-lg);
+    font-size: 2.5rem;
+    font-weight: 800;
+    animation: winnerPulse 2s ease-in-out infinite, slideDown 0.8s ease-out;
+    box-shadow: 0 0 30px rgba(255, 107, 107, 0.6), var(--shadow-xl);
+    border: 3px solid #ffd93d;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    transform: scale(1.05);
 }
 
 @keyframes slideDown {
     from {
-        transform: translateY(-100%);
+        transform: translateY(-100%) scale(1.05);
         opacity: 0;
     }
     to {
-        transform: translateY(0);
+        transform: translateY(0) scale(1.05);
         opacity: 1;
+    }
+}
+
+@keyframes winnerPulse {
+    0%, 100% {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 107, 107, 0.6), var(--shadow-xl);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 50px rgba(255, 107, 107, 0.9), 0 0 80px rgba(255, 215, 61, 0.5), var(--shadow-xl);
     }
 }
 
