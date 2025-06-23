@@ -5,25 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Pokemon Team Setup</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="Build custom Pokemon teams for battle - Manual team setup">
+    <meta name="theme-color" content="#ff6b6b">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Manual Team Builder</h1>
+            <h1>🔧 Manual Team Builder</h1>
         </header>
 
         <div> 
-            <div class="manual-setup-header" style="background-color: #1e1e1e; border-radius: 8px; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); max-width: 800px; margin: 0 auto 2rem;">
-                <h2 style="text-align: center; margin-bottom: 1.5rem; color: #ff5c69;">Build Your Teams</h2>
+            <div class="manual-setup-header">
+                <h2>🏗️ Build Your Teams</h2>
+                <p style="text-align: center; color: var(--text-secondary); margin-top: 1rem; font-size: 1.1rem;">
+                    Create custom teams by selecting your favorite Pokemon. Type to search and build the ultimate battle lineup!
+                </p>
             </div>
 
             <!-- Battle Grid Layout for Manual Setup -->
             <div class="battle-grid manual-setup-grid">
                 <!-- Player 1 Section -->
                 <div class="player-section">
-                    <h2 id="player1-header" contenteditable="true" title="Click to edit name">Player 1 Team</h2>
-                    <div class="score-display team-stats" id="player1-team-stats">Total Stats: 0</div>
+                    <h2 id="player1-header" contenteditable="true" title="Click to edit name">👤 Player 1 Team</h2>
+                    <div class="score-display team-stats" id="player1-team-stats">
+                        <div style="font-size: 1.1rem; font-weight: 700;">📊 Total Stats: 0</div>
+                        <div style="font-size: 0.9rem; opacity: 0.8;">0/6 Pokemon selected</div>
+                    </div>
                     <div class="pokemon-grid" id="player1-pokemon-selection-grid">
                         <!-- 6 Card Slots for Player 1 -->
                         {% for i in range(6) %}
@@ -32,13 +42,13 @@
                                 <!-- Input Face (Visible Initially) -->
                                 <div class="card-front manual-input-face">
                                     <div class="pokemon-selector">
-                                        <input type="text" class="pokemon-input-in-card" data-player="1" data-index="{{ i }}" placeholder="Type Pokémon {{ i+1 }}...">
+                                        <input type="text" class="pokemon-input-in-card" data-player="1" data-index="{{ i }}" placeholder="🔍 Type Pokémon {{ i+1 }}..." autocomplete="off">
                                         <div class="autocomplete-dropdown"></div>
                                     </div>
                                 </div>
                                 <!-- Details Face (Hidden Initially) -->
                                 <div class="card-back manual-details-face">
-                                    <button class="remove-pokemon" data-player="1" data-index="{{ i }}" title="Remove Pokemon">&times;</button>
+                                    <button class="remove-pokemon" data-player="1" data-index="{{ i }}" title="Remove Pokemon" aria-label="Remove Pokemon">&times;</button>
                                     <div class="pokemon-image"><img src="" alt=""></div>
                                     <div class="pokemon-info">
                                         <h3 class="pokemon-name"></h3>
@@ -57,12 +67,15 @@
                 </div>
 
                 <!-- VS Section -->
-                <div class="vs-section">VS</div>
+                <div class="vs-section">⚔️</div>
 
                 <!-- Player 2 Section -->
                 <div class="player-section">
-                    <h2 id="player2-header" contenteditable="true" title="Click to edit name">Player 2 Team</h2>
-                    <div class="score-display team-stats" id="player2-team-stats">Total Stats: 0</div>
+                    <h2 id="player2-header" contenteditable="true" title="Click to edit name">👤 Player 2 Team</h2>
+                    <div class="score-display team-stats" id="player2-team-stats">
+                        <div style="font-size: 1.1rem; font-weight: 700;">📊 Total Stats: 0</div>
+                        <div style="font-size: 0.9rem; opacity: 0.8;">0/6 Pokemon selected</div>
+                    </div>
                     <div class="pokemon-grid" id="player2-pokemon-selection-grid">
                         <!-- 6 Card Slots for Player 2 -->
                          {% for i in range(6) %}
@@ -71,13 +84,13 @@
                                 <!-- Input Face (Visible Initially) -->
                                 <div class="card-front manual-input-face">
                                      <div class="pokemon-selector">
-                                        <input type="text" class="pokemon-input-in-card" data-player="2" data-index="{{ i }}" placeholder="Type Pokémon {{ i+1 }}...">
+                                        <input type="text" class="pokemon-input-in-card" data-player="2" data-index="{{ i }}" placeholder="🔍 Type Pokémon {{ i+1 }}..." autocomplete="off">
                                         <div class="autocomplete-dropdown"></div>
                                     </div>
                                 </div>
                                 <!-- Details Face (Hidden Initially) -->
                                 <div class="card-back manual-details-face">
-                                    <button class="remove-pokemon" data-player="2" data-index="{{ i }}" title="Remove Pokemon">&times;</button>
+                                    <button class="remove-pokemon" data-player="2" data-index="{{ i }}" title="Remove Pokemon" aria-label="Remove Pokemon">&times;</button>
                                     <div class="pokemon-image"><img src="" alt=""></div>
                                     <div class="pokemon-info">
                                         <h3 class="pokemon-name"></h3>
@@ -97,8 +110,14 @@
             </div>
 
             <div style="text-align: center; margin-top: 2rem;">
-                <button id="start-manual-battle-btn" class="button">Start Battle with These Teams</button>
-                <a href="/" style="display: block; margin-top: 1rem; color: #aaa;">Cancel and Go Back</a>
+                <button id="start-manual-battle-btn" class="button">
+                    ⚔️ Start Battle with These Teams
+                </button>
+                <div style="margin-top: 1rem;">
+                    <a href="/" class="button button-secondary">
+                        ⬅️ Cancel and Go Back
+                    </a>
+                </div>
             </div>
         </div>
     </div>

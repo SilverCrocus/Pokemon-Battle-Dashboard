@@ -215,8 +215,12 @@ document.addEventListener('DOMContentLoaded', function() {
         link.href = `https://pokemondb.net/pokedex/${formattedName}`;
         link.title = `View ${pokemon.name} on Pokédex`;
 
-        // Set name
-        detailsFace.querySelector('.pokemon-name').textContent = pokemon.name;
+        // Set name with total stats badge
+        const nameElement = detailsFace.querySelector('.pokemon-name');
+        nameElement.innerHTML = `
+            ${pokemon.name}
+            <span class="pokemon-total-badge">${pokemon.total_stats}</span>
+        `;
 
         // Set types
         const typesContainer = detailsFace.querySelector('.pokemon-types');
@@ -329,15 +333,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let currentTotalStats = 0;
         let pokemonCount = 0;
+        const pokemonStats = [];
 
         teamList.forEach(pokemon => {
             if (pokemon) {
                 pokemonCount++;
                 currentTotalStats += pokemon.total_stats;
+                pokemonStats.push(pokemon.total_stats);
             }
         });
 
-        teamStatsDiv.textContent = `Total Stats: ${currentTotalStats}`;
+        // Enhanced display with individual Pokemon stats
+        if (pokemonCount > 0) {
+            const avgStats = Math.round(currentTotalStats / pokemonCount);
+            const statsBreakdown = pokemonStats.join(' + ');
+            teamStatsDiv.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">
+                    📊 Total Stats: <span style="color: var(--secondary-color);">${currentTotalStats}</span>
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">
+                    ${pokemonCount}/6 Pokemon • Avg: ${avgStats}
+                </div>
+                ${pokemonCount > 1 ? `<div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">${statsBreakdown}</div>` : ''}
+            `;
+        } else {
+            teamStatsDiv.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 700;">
+                    📊 Total Stats: 0
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">
+                    0/6 Pokemon selected
+                </div>
+            `;
+        }
+
         if (pokemonCount === 6) {
             teamStatsDiv.classList.add('team-complete');
             teamStatsDiv.classList.remove('team-incomplete');
